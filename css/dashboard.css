@@ -307,6 +307,7 @@
     background: #e2e8f0;
 }
 
+
 /* Responsive design for dashboard */
 @media (max-width: 1024px) {
     .dashboard-charts {

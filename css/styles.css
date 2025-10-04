@@ -272,6 +272,18 @@ body {
     background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
+.stat-card:nth-child(5) .stat-icon {
+    background: linear-gradient(135deg, hwb(235 71% 9%), hsl(332, 45%, 83%));
+}
+
+.stat-card:nth-child(6) .stat-icon {
+    background: linear-gradient(135deg, hwb(235 85% 0%), hsl(169, 84%, 15%));
+}
+
+.stat-card:nth-child(7) .stat-icon {
+    background: linear-gradient(135deg, lch(73.6% 16.32 116.9), hsl(168, 15%, 32%));
+}
+
 .stat-content h3 {
     font-size: 1.875rem;
     font-weight: 700;

@@ -251,10 +251,11 @@
                         </div>
                     </div>
                     <div class="zones-grid">
-                        <div class="zone-card healthy">
+                        <div class="zone-card healthy clickable-zone" data-zone="A" data-zone-name="North Field">
                             <div class="zone-header">
                                 <h4>Zone A - North Field</h4>
                                 <span class="zone-status">Healthy</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
                             </div>
                             <div class="zone-metrics">
                                 <div class="metric">
@@ -270,11 +271,15 @@
                                     <span class="metric-value">45/50</span>
                                 </div>
                             </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
                         </div>
-                        <div class="zone-card healthy">
+                        <div class="zone-card healthy clickable-zone" data-zone="B" data-zone-name="South Field">
                             <div class="zone-header">
                                 <h4>Zone B - South Field</h4>
                                 <span class="zone-status">Healthy</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
                             </div>
                             <div class="zone-metrics">
                                 <div class="metric">
@@ -290,11 +295,15 @@
                                     <span class="metric-value">48/50</span>
                                 </div>
                             </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
                         </div>
-                        <div class="zone-card warning">
+                        <div class="zone-card warning clickable-zone" data-zone="C" data-zone-name="East Field">
                             <div class="zone-header">
                                 <h4>Zone C - East Field</h4>
                                 <span class="zone-status">Warning</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
                             </div>
                             <div class="zone-metrics">
                                 <div class="metric">
@@ -310,11 +319,15 @@
                                     <span class="metric-value">42/50</span>
                                 </div>
                             </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
                         </div>
-                        <div class="zone-card healthy">
+                        <div class="zone-card healthy clickable-zone" data-zone="D" data-zone-name="West Field">
                             <div class="zone-header">
                                 <h4>Zone D - West Field</h4>
                                 <span class="zone-status">Healthy</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
                             </div>
                             <div class="zone-metrics">
                                 <div class="metric">
@@ -330,6 +343,9 @@
                                     <span class="metric-value">49/50</span>
                                 </div>
                             </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -337,6 +353,9 @@
         </main>
     </div>
 
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/zone-styles.css">
+    
     <!-- JavaScript -->
     <!-- Shared Components -->
     <script src="js/utils/constants.js"></script>
@@ -347,5 +366,37 @@
     
     <!-- Page Specific -->
     <script src="js/dashboard.js"></script>
+    <script src="js/zone-navigation.js"></script>
+    
+    <script>
+        // Debug script loading
+        console.log('Dashboard page loaded');
+        console.log('Zone cards found:', document.querySelectorAll('.clickable-zone').length);
+        
+        // Fallback zone click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const zoneCards = document.querySelectorAll('.clickable-zone');
+            console.log('Found', zoneCards.length, 'clickable zones');
+            
+            zoneCards.forEach((card, index) => {
+                console.log(`Zone ${index}:`, card.getAttribute('data-zone'));
+                
+                card.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const zone = this.getAttribute('data-zone');
+                    const zoneName = this.getAttribute('data-zone-name');
+                    
+                    console.log('Zone clicked:', zone, zoneName);
+                    
+                    // Store zone info in localStorage for Map page
+                    localStorage.setItem('selectedZone', zone);
+                    localStorage.setItem('selectedZoneName', zoneName);
+                    
+                    // Navigate to Map page
+                    window.location.href = 'Map.html';
+                });
+            });
+        });
+    </script>
 </body>
 </html>

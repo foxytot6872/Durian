@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farm Map - Durian Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/zone-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -89,20 +90,194 @@
 
             <!-- Dashboard Content -->
             <div class="dashboard-content">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Farm Layout & Monitoring</h3>
-                        <div class="chart-controls">
-                            <button class="btn-secondary">Satellite View</button>
-                            <button class="btn-secondary">Terrain View</button>
+                <!-- Zone Camera Feed -->
+                <div class="camera-section">
+                    <div class="camera-header">
+                        <div class="camera-info">
+                            <h2 id="zoneTitle">Zone A - North Field</h2>
+                            <div class="camera-status">
+                                <span class="status-indicator live"></span>
+                                <span>Live Camera Feed</span>
+                            </div>
+                        </div>
+                        <div class="camera-controls">
+                            <button class="btn-secondary" id="fullscreenBtn">
+                                <i class="fas fa-expand"></i>
+                                Fullscreen
+                            </button>
+                            <button class="btn-secondary" id="recordBtn">
+                                <i class="fas fa-video"></i>
+                                Record
+                            </button>
+                            <button class="btn-secondary" id="backBtn">
+                                <i class="fas fa-arrow-left"></i>
+                                Back to Dashboard
+                            </button>
                         </div>
                     </div>
-                    <div class="chart-container" style="height: 500px; background: #f8fafc; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: #64748b;">
-                        <div style="text-align: center;">
-                            <i class="fas fa-map" style="font-size: 3rem; margin-bottom: 1rem; color: #4ba252;"></i>
-                            <h3>Interactive Farm Map</h3>
-                            <p>Map integration will be added here</p>
+                    
+                    <div class="camera-container">
+                        <div class="camera-feed" id="cameraFeed">
+                            <div class="camera-placeholder">
+                                <i class="fas fa-video" style="font-size: 4rem; color: #4ba252; margin-bottom: 1rem;"></i>
+                                <h3 id="cameraTitle">Zone A - North Field Live Feed</h3>
+                                <p id="cameraDescription">Monitoring durian trees and soil conditions</p>
+                                <div class="camera-stats">
+                                    <div class="stat">
+                                        <span class="stat-label">Resolution</span>
+                                        <span class="stat-value">1080p HD</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">FPS</span>
+                                        <span class="stat-value">30</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">Status</span>
+                                        <span class="stat-value live">Live</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Zone Information -->
+                <div class="zone-info-section">
+                    <div class="zone-details">
+                        <h3>Zone Information</h3>
+                        <div class="zone-metrics-grid" id="zoneMetrics">
+                            <!-- Zone metrics will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="zone-actions">
+                        <h3>Quick Actions</h3>
+                        <div class="action-buttons">
+                            <button class="action-btn">
+                                <i class="fas fa-thermometer-half"></i>
+                                Check Temperature
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-tint"></i>
+                                Check Moisture
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-leaf"></i>
+                                Plant Health
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-camera"></i>
+                                Take Photo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Valve Control System -->
+                <div class="valve-control-section">
+                    <div class="valve-control-header">
+                        <h3>Valve Control System</h3>
+                        <div class="valve-status-indicator">
+                            <span class="status-dot" id="valveStatusDot"></span>
+                            <span id="valveStatusText">System Ready</span>
+                        </div>
+                    </div>
+                    
+                    <div class="valve-controls-grid">
+                        <div class="valve-control-card">
+                            <div class="valve-header">
+                                <h4>Watering System</h4>
+                                <div class="valve-toggle" id="wateringToggle">
+                                    <input type="checkbox" id="wateringValve" class="valve-switch">
+                                    <label for="wateringValve" class="valve-label">
+                                        <span class="valve-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="valve-metrics">
+                                <div class="valve-metric">
+                                    <span class="metric-label">Water Pressure</span>
+                                    <span class="metric-value" id="waterPressure">2.5 bar</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Flow Rate</span>
+                                    <span class="metric-value" id="flowRate">15 L/min</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Duration</span>
+                                    <span class="metric-value" id="wateringDuration">30 min</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="valve-control-card">
+                            <div class="valve-header">
+                                <h4>Fertilizer System</h4>
+                                <div class="valve-toggle" id="fertilizerToggle">
+                                    <input type="checkbox" id="fertilizerValve" class="valve-switch">
+                                    <label for="fertilizerValve" class="valve-label">
+                                        <span class="valve-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="valve-metrics">
+                                <div class="valve-metric">
+                                    <span class="metric-label">Fertilizer Level</span>
+                                    <span class="metric-value" id="fertilizerLevel">75%</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Concentration</span>
+                                    <span class="metric-value" id="fertilizerConcentration">2.5%</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Last Applied</span>
+                                    <span class="metric-value" id="lastFertilizer">2 days ago</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="valve-control-card">
+                            <div class="valve-header">
+                                <h4>Pest Control</h4>
+                                <div class="valve-toggle" id="pestControlToggle">
+                                    <input type="checkbox" id="pestControlValve" class="valve-switch">
+                                    <label for="pestControlValve" class="valve-label">
+                                        <span class="valve-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="valve-metrics">
+                                <div class="valve-metric">
+                                    <span class="metric-label">Spray Coverage</span>
+                                    <span class="metric-value" id="sprayCoverage">95%</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Tank Level</span>
+                                    <span class="metric-value" id="tankLevel">60%</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Last Treatment</span>
+                                    <span class="metric-value" id="lastTreatment">1 week ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zone Status Dashboard -->
+                <div class="zone-status-dashboard">
+                    <div class="status-header">
+                        <h3>Zone Status Dashboard</h3>
+                        <div class="status-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="watering">Watering</button>
+                            <button class="filter-btn" data-filter="fertilizer">Fertilizer</button>
+                            <button class="filter-btn" data-filter="disease">Disease</button>
+                        </div>
+                    </div>
+                    
+                    <div class="status-cards-grid" id="statusCardsGrid">
+                        <!-- Status cards will be populated by JavaScript -->
                     </div>
                 </div>
 
@@ -150,11 +325,19 @@
         </main>
     </div>
 
+    <!-- JavaScript -->
+    <script src="js/zone-navigation.js"></script>
+    
     <script>
         // Mobile menu toggle
         document.querySelector('.menu-toggle').addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
         });
+        
+        // Debug Map page loading
+        console.log('Map page loaded');
+        console.log('Selected zone:', localStorage.getItem('selectedZone'));
+        console.log('Selected zone name:', localStorage.getItem('selectedZoneName'));
     </script>
 </body>
 </html>

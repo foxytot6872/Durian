@@ -98,9 +98,9 @@ class FarmDashboard {
                     <td>${activity.duration}</td>
                     <td><span class="status-badge ${activity.status.toLowerCase().replace(' ', '-')}">${activity.status}</span></td>
                     <td>${activity.time}</td>
-                </tr>
-            `).join('');
-        }
+            </tr>
+        `).join('');
+    }
     }
 
     initFarmCharts() {

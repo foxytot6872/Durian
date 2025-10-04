@@ -1,0 +1,599 @@
+/* Zone Navigation and Camera Feed Styles */
+
+/* Clickable Zone Styles */
+.clickable-zone {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.clickable-zone:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.zone-camera-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: #4ba252;
+    font-size: 1.2rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.clickable-zone:hover .zone-camera-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.zone-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.view-camera-text {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.clickable-zone:hover .view-camera-text {
+    color: #4ba252;
+}
+
+/* Zone status indicators */
+.zone-card.healthy {
+    border-left: 4px solid #4ba252;
+}
+
+.zone-card.warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.zone-card.critical {
+    border-left: 4px solid #ef4444;
+}
+
+/* Camera Feed Styles */
+.camera-section {
+    margin-bottom: 2rem;
+}
+
+.camera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.camera-info h2 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.camera-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.live {
+    background: #4ba252;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.camera-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+.camera-container {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.camera-feed {
+    position: relative;
+    height: 500px;
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-placeholder {
+    text-align: center;
+    color: #64748b;
+}
+
+.camera-placeholder h3 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1rem 0;
+}
+
+.camera-placeholder p {
+    color: #64748b;
+    margin-bottom: 2rem;
+}
+
+.camera-stats {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.camera-stats .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.camera-stats .stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.camera-stats .stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.camera-stats .stat-value.live {
+    color: #4ba252;
+}
+
+/* Zone Information Styles */
+.zone-info-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.zone-details,
+.zone-actions {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.zone-details h3,
+.zone-actions h3 {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem 0;
+}
+
+.zone-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.zone-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border-left: 4px solid #4ba252;
+}
+
+.zone-metric .metric-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.zone-metric .metric-value {
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: #4ba252;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(75, 162, 82, 0.3);
+}
+
+.action-btn i {
+    font-size: 1.5rem;
+}
+
+/* Recording button styles */
+.btn-secondary.recording {
+    background: #ef4444 !important;
+    color: white !important;
+    animation: recordingPulse 1.5s infinite;
+}
+
+@keyframes recordingPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Valve Control System Styles */
+.valve-control-section {
+    margin-bottom: 2rem;
+}
+
+.valve-control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.valve-control-header h3 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.valve-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ba252;
+    animation: pulse 2s infinite;
+}
+
+.valve-controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.valve-control-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    border-left: 4px solid #4ba252;
+}
+
+.valve-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.valve-header h4 {
+    color: #1e293b;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.valve-toggle {
+    position: relative;
+}
+
+.valve-switch {
+    display: none;
+}
+
+.valve-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.valve-slider {
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.valve-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.valve-switch:checked + .valve-label .valve-slider {
+    background: #4ba252;
+}
+
+.valve-switch:checked + .valve-label .valve-slider::before {
+    transform: translateX(26px);
+}
+
+.valve-metrics {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.valve-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+}
+
+.valve-metric .metric-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.valve-metric .metric-value {
+    color: #1e293b;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+/* Zone Status Dashboard */
+.zone-status-dashboard {
+    margin-bottom: 2rem;
+}
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-header h3 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.status-filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: #4ba252;
+    color: white;
+    border-color: #4ba252;
+}
+
+.status-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.status-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    border-left: 4px solid #4ba252;
+    transition: all 0.3s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.status-card.warning {
+    border-left-color: #f59e0b;
+}
+
+.status-card.critical {
+    border-left-color: #ef4444;
+}
+
+.status-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.status-card-title {
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.healthy {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.critical {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.status-card-content {
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* Responsive design for zones and camera */
+@media (max-width: 1024px) {
+    .zone-info-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .camera-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .camera-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .zones-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    
+    .valve-controls-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .status-filters {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .camera-feed {
+        height: 300px;
+    }
+    
+    .camera-stats {
+        gap: 1rem;
+    }
+    
+    .camera-stats .stat {
+        min-width: 80px;
+    }
+    
+    .zone-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .zones-grid {
+        grid-template-columns: 1fr;
+    }
+}
