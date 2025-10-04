@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Durian Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Durian Dashboard</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
+                    </a>
+                </li>
+                <li class="nav-item ">
+                    <a href="finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#settings" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
+                        <span>John Doe</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Farm Status Overview -->
+                <div class="farm-overview">
+                    <div class="overview-header">
+                        <h2>Farm Status Overview</h2>
+                        <div class="status-indicator">
+                            <span class="status-dot healthy"></span>
+                            <span>All Systems Operational</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>65%</h3>
+                            <p>Soil Moisture</p>
+                            <span class="stat-change positive">Optimal</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>28°C</h3>
+                            <p>Temperature</p>
+                            <span class="stat-change positive">Ideal</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-cloud-rain"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>75%</h3>
+                            <p>Humidity</p>
+                            <span class="stat-change positive">Good</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>92%</h3>
+                            <p>Plant Health</p>
+                            <span class="stat-change positive">Excellent</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>1,250</h3>
+                            <p>Expected Yield (kg)</p>
+                            <span class="stat-change positive">+15%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Weather & Soil Conditions</h3>
+                            <div class="chart-controls">
+                                <select id="weatherPeriod">
+                                    <option>Last 7 days</option>
+                                    <option>Last 30 days</option>
+                                    <option>Last 3 months</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="weatherChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Plant Growth Progress</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Farm Alerts & Activities -->
+                <div class="tables-grid">
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Farm Alerts</h3>
+                            <button class="btn-secondary">View All</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Alert Type</th>
+                                        <th>Description</th>
+                                        <th>Priority</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alertsTableBody">
+                                    <!-- Alerts will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Recent Activities</h3>
+                            <button class="btn-secondary">View All</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Activity</th>
+                                        <th>Location</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activitiesTableBody">
+                                    <!-- Activities will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Farm Zones Status -->
+                <div class="zones-section">
+                    <div class="section-header">
+                        <h3>Farm Zones Status</h3>
+                        <div class="zone-legend">
+                            <span class="legend-item">
+                                <span class="legend-color healthy"></span>
+                                Healthy
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-color warning"></span>
+                                Warning
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-color critical"></span>
+                                Critical
+                            </span>
+                        </div>
+                    </div>
+                    <div class="zones-grid">
+                        <div class="zone-card healthy">
+                            <div class="zone-header">
+                                <h4>Zone A - North Field</h4>
+                                <span class="zone-status">Healthy</span>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Moisture</span>
+                                    <span class="metric-value">68%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value">27°C</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Plants</span>
+                                    <span class="metric-value">45/50</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="zone-card healthy">
+                            <div class="zone-header">
+                                <h4>Zone B - South Field</h4>
+                                <span class="zone-status">Healthy</span>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Moisture</span>
+                                    <span class="metric-value">62%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value">29°C</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Plants</span>
+                                    <span class="metric-value">48/50</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="zone-card warning">
+                            <div class="zone-header">
+                                <h4>Zone C - East Field</h4>
+                                <span class="zone-status">Warning</span>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Moisture</span>
+                                    <span class="metric-value">45%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value">32°C</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Plants</span>
+                                    <span class="metric-value">42/50</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="zone-card healthy">
+                            <div class="zone-header">
+                                <h4>Zone D - West Field</h4>
+                                <span class="zone-status">Healthy</span>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Moisture</span>
+                                    <span class="metric-value">71%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value">26°C</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Plants</span>
+                                    <span class="metric-value">49/50</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <!-- Shared Components -->
+    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/components/navigation.js"></script>
+    <script src="js/components/common.js"></script>
+    <script src="js/components/charts.js"></script>
+    
+    <!-- Page Specific -->
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

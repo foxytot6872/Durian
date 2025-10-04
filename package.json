@@ -2,10 +2,10 @@
   "name": "durian-dashboard",
   "version": "1.0.0",
   "description": "A modern dashboard web application built with HTML, CSS, and TypeScript",
-  "main": "index.html",
+  "main": "dashboard.html",
   "scripts": {
-    "build": "tsc script.ts --target es2017 --outDir . --moduleResolution node",
-    "dev": "tsc script.ts --target es2017 --outDir . --moduleResolution node --watch",
+    "build": "tsc js/script.ts --target es2017 --outDir . --moduleResolution node",
+    "dev": "tsc js/script.ts --target es2017 --outDir . --moduleResolution node --watch",
     "serve": "npx http-server . -p 3000 -o",
     "start": "npm run build && npm run serve"
   },
@@ -17,13 +17,15 @@
     "chart.js",
     "responsive"
   ],
-  "author": "Your Name",
+  "author": "Jakrapob","author2": "Suthimon","author3": "Phakwalan","author4": "Athitaya",
   "license": "MIT",
   "devDependencies": {
     "http-server": "^14.1.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@types/chart.js": "^2.9.41"
   },
   "dependencies": {
-    "chart.js": "^4.4.0"
+    "chart.js": "^4.4.0",
+    "@types/chart.js": "^2.9.41"
   }
 }
