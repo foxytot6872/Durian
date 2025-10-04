@@ -17,46 +17,46 @@
         <nav class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <i class="fas fa-chart-pie"></i>
+                    <i class="fas fa-seedling"></i>
                     <span>Durian Dashboard</span>
                 </div>
             </div>
             
             <ul class="nav-menu">
-                <li class="nav-item active">
-                    <a href="#dashboard" class="nav-link">
+                <li class="nav-item">
+                    <a href="main.html" class="nav-link">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
                     </a>
+                </li>
                 <li class="nav-item">
-                    <a href="#products" class="nav-link">
-                        <i class="fas fa-box"></i>
-                        <span>Recommend</span>
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
                     </a>
                 </li>
-                </li>
-                <li class="nav-item">
-                    <a href="#analytics" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Forecast</span>
+                <li class="nav-item active">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#analytics" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
+                    <a href="Finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
                         <span>Finance</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#orders" class="nav-link">
-                        <i class="fas fa-shopping-cart"></i>
+                    <a href="Map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
                         <span>Map</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#customers" class="nav-link">
-                        <i class="fas fa-users"></i>
-                        <span>Soil</span>
+                    <a href="Soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -76,7 +76,7 @@
                     <button class="menu-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Dashboard</h1>
+                    <h1>Weather Overview</h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -258,5 +258,36 @@
     <script src="js/components/weather-map-demo.js"></script>
     <!-- Load weather dashboard -->
     <script src="js/weather-dashboard.js"></script>
+    
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+
+        // Debug navigation issues
+        document.addEventListener('DOMContentLoaded', function() {
+            // Debug navigation links
+            const navLinks = document.querySelectorAll('.nav-link');
+            console.log('Found', navLinks.length, 'navigation links');
+            
+            navLinks.forEach((link, index) => {
+                console.log(`Link ${index}:`, link.href, link.textContent.trim());
+                
+                link.addEventListener('click', function(e) {
+                    console.log('Link clicked:', this.href);
+                    
+                    // Check if the link has a valid href
+                    if (this.href && this.href !== '#' && !this.href.includes('#')) {
+                        console.log('Navigating to:', this.href);
+                        // Force navigation
+                        window.location.href = this.href;
+                    } else {
+                        console.log('Invalid or hash link:', this.href);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
