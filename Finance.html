@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Durian Dashboard</title>
+    <title>Finance - Durian Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,13 +14,13 @@
         <nav class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <i class="fas fa-chart-pie"></i>
+                    <i class="fas fa-seedling"></i>
                     <span>Durian Dashboard</span>
                 </div>
             </div>
             
             <ul class="nav-menu">
-                <li class="nav-item active">
+                <li class="nav-item">
                     <a href="main.html" class="nav-link">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
@@ -38,7 +38,7 @@
                         <span>Weather Forecast</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a href="Finance.html" class="nav-link">
                         <i class="fas fa-dollar-sign"></i>
                         <span>Finance</span>
@@ -73,16 +73,16 @@
                     <button class="menu-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Dashboard</h1>
+                    <h1>Finance</h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
                         <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
+                        <span class="badge">2</span>
                     </div>
                     <div class="user-profile">
-                        <img src="assets\images\รูปนักศึกษา.jpg" alt="User">
-                        <span>John Doe</span>
+                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span>Durian Farmer</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
@@ -97,28 +97,8 @@
                             <i class="fas fa-dollar-sign"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>50%</h3>
-                            <p>overall soil moisture</p>
-                            <span class="stat-change positive">+12.5%</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>1,234</h3>
-                            <p>Total Orders</p>
-                            <span class="stat-change positive">+8.2%</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>5,678</h3>
-                            <p>Total Customers</p>
+                            <h3>฿125,000</h3>
+                            <p>Total Revenue</p>
                             <span class="stat-change positive">+15.3%</span>
                         </div>
                     </div>
@@ -127,9 +107,29 @@
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>89.2%</h3>
-                            <p>Conversion Rate</p>
-                            <span class="stat-change negative">-2.1%</span>
+                            <h3>฿85/kg</h3>
+                            <p>Average Price</p>
+                            <span class="stat-change positive">+8.2%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>1,470 kg</h3>
+                            <p>Total Sales</p>
+                            <span class="stat-change positive">+12.5%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>฿45,000</h3>
+                            <p>Expenses</p>
+                            <span class="stat-change negative">+5.1%</span>
                         </div>
                     </div>
                 </div>
@@ -153,10 +153,10 @@
                     </div>
                     <div class="chart-card">
                         <div class="chart-header">
-                            <h3>Sales Distribution</h3>
+                            <h3>Profit vs Expenses</h3>
                         </div>
                         <div class="chart-container">
-                            <canvas id="salesChart"></canvas>
+                            <canvas id="profitChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -165,44 +165,70 @@
                 <div class="tables-grid">
                     <div class="table-card">
                         <div class="table-header">
-                            <h3>Recent Orders</h3>
+                            <h3>Recent Transactions</h3>
                             <button class="btn-secondary">View All</button>
                         </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Order ID</th>
-                                        <th>Customer</th>
-                                        <th>Product</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
                                         <th>Amount</th>
                                         <th>Status</th>
-                                        <th>Date</th>
                                     </tr>
                                 </thead>
-                                <tbody id="ordersTableBody">
-                                    <!-- Orders will be populated by JavaScript -->
+                                <tbody>
+                                    <tr>
+                                        <td>2024-01-15</td>
+                                        <td>Sale</td>
+                                        <td>฿15,000</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024-01-14</td>
+                                        <td>Expense</td>
+                                        <td>฿-2,500</td>
+                                        <td><span class="status-badge pending">Pending</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024-01-13</td>
+                                        <td>Sale</td>
+                                        <td>฿12,000</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     <div class="table-card">
                         <div class="table-header">
-                            <h3>Top Products</h3>
-                            <button class="btn-secondary">View All</button>
+                            <h3>Monthly Summary</h3>
+                            <button class="btn-secondary">Export</button>
                         </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Product</th>
-                                        <th>Sales</th>
+                                        <th>Month</th>
                                         <th>Revenue</th>
-                                        <th>Growth</th>
+                                        <th>Expenses</th>
+                                        <th>Profit</th>
                                     </tr>
                                 </thead>
-                                <tbody id="productsTableBody">
-                                    <!-- Products will be populated by JavaScript -->
+                                <tbody>
+                                    <tr>
+                                        <td>January 2024</td>
+                                        <td>฿125,000</td>
+                                        <td>฿45,000</td>
+                                        <td>฿80,000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>December 2023</td>
+                                        <td>฿98,000</td>
+                                        <td>฿42,000</td>
+                                        <td>฿56,000</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -212,11 +238,11 @@
         </main>
     </div>
 
-    <!-- Load utility modules -->
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/components/charts.js"></script>
-    <!-- Load main dashboard -->
-    <script src="js/dashboard.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+    </script>
 </body>
 </html>

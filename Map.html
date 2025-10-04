@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Map - Durian Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Durian Dashboard</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="main.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="Map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#settings" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Farm Map</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">0</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span>Durian Farmer</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Farm Layout & Monitoring</h3>
+                        <div class="chart-controls">
+                            <button class="btn-secondary">Satellite View</button>
+                            <button class="btn-secondary">Terrain View</button>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 500px; background: #f8fafc; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: #64748b;">
+                        <div style="text-align: center;">
+                            <i class="fas fa-map" style="font-size: 3rem; margin-bottom: 1rem; color: #4ba252;"></i>
+                            <h3>Interactive Farm Map</h3>
+                            <p>Map integration will be added here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Field Status</h3>
+                            <button class="btn-secondary">View Details</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field ID</th>
+                                        <th>Area (hectares)</th>
+                                        <th>Status</th>
+                                        <th>Last Update</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Field A-01</td>
+                                        <td>2.5</td>
+                                        <td><span class="status-badge completed">Healthy</span></td>
+                                        <td>2 hours ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Field A-02</td>
+                                        <td>3.2</td>
+                                        <td><span class="status-badge pending">Monitoring</span></td>
+                                        <td>1 hour ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Field B-01</td>
+                                        <td>1.8</td>
+                                        <td><span class="status-badge completed">Healthy</span></td>
+                                        <td>30 minutes ago</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+    </script>
+</body>
+</html>

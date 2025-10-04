@@ -41,25 +41,19 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#analytics" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Analytics</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#finance" class="nav-link">
+                    <a href="Finance.html" class="nav-link">
                         <i class="fas fa-dollar-sign"></i>
                         <span>Finance</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#map" class="nav-link">
+                    <a href="Map.html" class="nav-link">
                         <i class="fas fa-map"></i>
                         <span>Map</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#soil" class="nav-link">
+                    <a href="Soil.html" class="nav-link">
                         <i class="fas fa-mountain"></i>
                         <span>Soil Analysis</span>
                     </a>
@@ -341,9 +335,32 @@
             document.querySelector('.sidebar').classList.toggle('open');
         });
 
-        // Initialize chart when page loads
+        // Debug navigation issues
         document.addEventListener('DOMContentLoaded', function() {
             initSoilMoistureChart();
+            
+            // Debug navigation links
+            const navLinks = document.querySelectorAll('.nav-link');
+            console.log('Found', navLinks.length, 'navigation links');
+            
+            navLinks.forEach((link, index) => {
+                console.log(`Link ${index}:`, link.href, link.textContent.trim());
+                
+                link.addEventListener('click', function(e) {
+                    console.log('Link clicked:', this.href);
+                    console.log('Event target:', e.target);
+                    console.log('Event currentTarget:', e.currentTarget);
+                    
+                    // Check if the link has a valid href
+                    if (this.href && this.href !== '#' && !this.href.includes('#')) {
+                        console.log('Navigating to:', this.href);
+                        // Force navigation
+                        window.location.href = this.href;
+                    } else {
+                        console.log('Invalid or hash link:', this.href);
+                    }
+                });
+            });
         });
 
         // Update time range
