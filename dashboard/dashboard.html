@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Durian Dashboard</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="zone-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -21,16 +22,16 @@
             </div>
             
             <ul class="nav-menu">
-                <li class="nav-item active">
-                    <a href="dashboard.html" class="nav-link">
-                        <i class="fas fa-home"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
                 <li class="nav-item">
                     <a href="today's recommendation.html" class="nav-link">
                         <i class="fas fa-lightbulb"></i>
                         <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -82,7 +83,7 @@
                         <span class="badge">3</span>
                     </div>
                     <div class="user-profile">
-                        <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
+                        <img src="..\assets\images\ทุเรียน1-1024x1024.png" alt="User">
                         <span>John Doe</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -144,18 +145,113 @@
                             <span class="stat-change positive">Excellent</span>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-chart-line"></i>
+                </div>
+                
+                <div class="zones-section">
+                    <div class="section-header">
+                        <h3>Farm Zones Status</h3>
+                        <div class="zone-legend">
+                            <span class="legend-item">
+                                <span class="legend-color healthy"></span>
+                                Healthy
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-color warning"></span>
+                                Warning
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-color critical"></span>
+                                Critical
+                            </span>
                         </div>
-                        <div class="stat-content">
-                            <h3>1,250</h3>
-                            <p>Expected Yield (kg)</p>
-                            <span class="stat-change positive">+15%</span>
+                    </div>
+                    <div class="zones-grid">
+                        <div class="zone-card healthy clickable-zone" data-zone="1" data-zone-name="North Field">
+                            <div class="zone-header">
+                                <h4>Zone 1 - North Field</h4>
+                                <span class="zone-status">Healthy</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Humidity</span>
+                                    <span class="metric-value" id="zone1-humidity">--%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value" id="zone1-tempreature">--°C</span>
+                                </div>
+                            </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
+                        </div>
+                        <div class="zone-card healthy clickable-zone" data-zone="2" data-zone-name="South Field">
+                            <div class="zone-header">
+                                <h4>Zone 2 - South Field</h4>
+                                <span class="zone-status">Healthy</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Humidity</span>
+                                    <span class="metric-value" id="zone2-humidity">--%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value" id="zone2-tempreature">--°C</span>
+                                </div>
+                            </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
+                        </div>
+                        <div class="zone-card warning clickable-zone" data-zone="3" data-zone-name="East Field">
+                            <div class="zone-header">
+                                <h4>Zone 3 - East Field</h4>
+                                <span class="zone-status">Warning</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Moisture</span>
+                                    <span class="metric-value">45%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value">32°C</span>
+                                </div>
+                            </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
+                        </div>
+                        <div class="zone-card healthy clickable-zone" data-zone="4" data-zone-name="West Field">
+                            <div class="zone-header">
+                                <h4>Zone 4 - West Field</h4>
+                                <span class="zone-status">Healthy</span>
+                                <i class="fas fa-camera zone-camera-icon"></i>
+                            </div>
+                            <div class="zone-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Soil Moisture</span>
+                                    <span class="metric-value">71%</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Temperature</span>
+                                    <span class="metric-value">26°C</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Plants</span>
+                                    <span class="metric-value">49/50</span>
+                                </div>
+                            </div>
+                            <div class="zone-footer">
+                                <span class="view-camera-text">Click to view live camera</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-
                 <!-- Charts Section -->
                 <div class="charts-grid">
                     <div class="chart-card">
@@ -232,171 +328,15 @@
                 </div>
 
                 <!-- Farm Zones Status -->
-                <div class="zones-section">
-                    <div class="section-header">
-                        <h3>Farm Zones Status</h3>
-                        <div class="zone-legend">
-                            <span class="legend-item">
-                                <span class="legend-color healthy"></span>
-                                Healthy
-                            </span>
-                            <span class="legend-item">
-                                <span class="legend-color warning"></span>
-                                Warning
-                            </span>
-                            <span class="legend-item">
-                                <span class="legend-color critical"></span>
-                                Critical
-                            </span>
-                        </div>
-                    </div>
-                    <div class="zones-grid">
-                        <div class="zone-card healthy clickable-zone" data-zone="A" data-zone-name="North Field">
-                            <div class="zone-header">
-                                <h4>Zone A - North Field</h4>
-                                <span class="zone-status">Healthy</span>
-                                <i class="fas fa-camera zone-camera-icon"></i>
-                            </div>
-                            <div class="zone-metrics">
-                                <div class="metric">
-                                    <span class="metric-label">Soil Moisture</span>
-                                    <span class="metric-value">68%</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Temperature</span>
-                                    <span class="metric-value">27°C</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Plants</span>
-                                    <span class="metric-value">45/50</span>
-                                </div>
-                            </div>
-                            <div class="zone-footer">
-                                <span class="view-camera-text">Click to view live camera</span>
-                            </div>
-                        </div>
-                        <div class="zone-card healthy clickable-zone" data-zone="B" data-zone-name="South Field">
-                            <div class="zone-header">
-                                <h4>Zone B - South Field</h4>
-                                <span class="zone-status">Healthy</span>
-                                <i class="fas fa-camera zone-camera-icon"></i>
-                            </div>
-                            <div class="zone-metrics">
-                                <div class="metric">
-                                    <span class="metric-label">Soil Moisture</span>
-                                    <span class="metric-value">62%</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Temperature</span>
-                                    <span class="metric-value">29°C</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Plants</span>
-                                    <span class="metric-value">48/50</span>
-                                </div>
-                            </div>
-                            <div class="zone-footer">
-                                <span class="view-camera-text">Click to view live camera</span>
-                            </div>
-                        </div>
-                        <div class="zone-card warning clickable-zone" data-zone="C" data-zone-name="East Field">
-                            <div class="zone-header">
-                                <h4>Zone C - East Field</h4>
-                                <span class="zone-status">Warning</span>
-                                <i class="fas fa-camera zone-camera-icon"></i>
-                            </div>
-                            <div class="zone-metrics">
-                                <div class="metric">
-                                    <span class="metric-label">Soil Moisture</span>
-                                    <span class="metric-value">45%</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Temperature</span>
-                                    <span class="metric-value">32°C</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Plants</span>
-                                    <span class="metric-value">42/50</span>
-                                </div>
-                            </div>
-                            <div class="zone-footer">
-                                <span class="view-camera-text">Click to view live camera</span>
-                            </div>
-                        </div>
-                        <div class="zone-card healthy clickable-zone" data-zone="D" data-zone-name="West Field">
-                            <div class="zone-header">
-                                <h4>Zone D - West Field</h4>
-                                <span class="zone-status">Healthy</span>
-                                <i class="fas fa-camera zone-camera-icon"></i>
-                            </div>
-                            <div class="zone-metrics">
-                                <div class="metric">
-                                    <span class="metric-label">Soil Moisture</span>
-                                    <span class="metric-value">71%</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Temperature</span>
-                                    <span class="metric-value">26°C</span>
-                                </div>
-                                <div class="metric">
-                                    <span class="metric-label">Plants</span>
-                                    <span class="metric-value">49/50</span>
-                                </div>
-                            </div>
-                            <div class="zone-footer">
-                                <span class="view-camera-text">Click to view live camera</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/zone-styles.css">
     
-    <!-- JavaScript -->
-    <!-- Shared Components -->
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/components/navigation.js"></script>
-    <script src="js/components/common.js"></script>
-    <script src="js/components/charts.js"></script>
-    
-    <!-- Page Specific -->
-    <script src="js/dashboard.js"></script>
-    <script src="js/zone-navigation.js"></script>
-    
-    <script>
-        // Debug script loading
-        console.log('Dashboard page loaded');
-        console.log('Zone cards found:', document.querySelectorAll('.clickable-zone').length);
-        
-        // Fallback zone click handler
-        document.addEventListener('DOMContentLoaded', function() {
-            const zoneCards = document.querySelectorAll('.clickable-zone');
-            console.log('Found', zoneCards.length, 'clickable zones');
-            
-            zoneCards.forEach((card, index) => {
-                console.log(`Zone ${index}:`, card.getAttribute('data-zone'));
-                
-                card.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const zone = this.getAttribute('data-zone');
-                    const zoneName = this.getAttribute('data-zone-name');
-                    
-                    console.log('Zone clicked:', zone, zoneName);
-                    
-                    // Store zone info in localStorage for Map page
-                    localStorage.setItem('selectedZone', zone);
-                    localStorage.setItem('selectedZoneName', zoneName);
-                    
-                    // Navigate to Map page
-                    window.location.href = 'Map.html';
-                });
-            });
-        });
-    </script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <script src="dashboard.js"></script>
 </body>
 </html>
