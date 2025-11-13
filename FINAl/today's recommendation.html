@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Durian Dashboard - Today's Recommendation</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/weather.css">
+    <link rel="stylesheet" href="css/recommendation.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Durian Dashboard</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Today's Recommendation</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">2</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span>Durian Farmer</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Hero Section -->
+                <div class="recommendation-hero">
+                    <h1>Today's Durian Farm Recommendations</h1>
+                    <p>Get personalized insights and recommendations for your durian farm based on current weather conditions, soil analysis, and market trends.</p>
+                </div>
+
+                <!-- Recommendation Cards -->
+                <div class="recommendation-grid">
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            Soil Moisture
+                        </h3>
+                        <div class="recommendation-value">65%</div>
+                        <div class="recommendation-description">
+                            Your soil moisture is optimal. Consider light watering in the evening to maintain current levels.
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                            Temperature
+                        </h3>
+                        <div class="recommendation-value">28°C</div>
+                        <div class="recommendation-description">
+                            Perfect temperature for durian growth. Monitor for any sudden changes that might affect fruit development.
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-seedling"></i>
+                            </div>
+                            Fertilizer
+                        </h3>
+                        <div class="recommendation-value">Due</div>
+                        <div class="recommendation-description">
+                            Time to apply organic fertilizer. Use nitrogen-rich compost to boost growth during this season.
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            Rainfall
+                        </h3>
+                        <div class="recommendation-value">20mm</div>
+                        <div class="recommendation-description">
+                            Current conditions show low pest activity. Continue regular monitoring and preventive measures.
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-sun"></i>
+                            </div>
+                            Wind
+                        </h3>
+                        <div class="recommendation-value">15 km/h</div>
+                        <div class="recommendation-description">
+                            Moderate wind speed. Ensure proper canopy management to maintain optimal light distribution.
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            pH
+                        </h3>
+                        <div class="recommendation-value">6.0</div>
+                        <div class="recommendation-description">
+                            pH is optimal for durian growth. Monitor for any sudden changes that might affect fruit development.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weather Section -->
+                <div class="weather-section">
+                    <div class="weather-header">
+                        <h3>Current Weather Conditions</h3>
+                        <span class="weather-update">Updated 5 minutes ago</span>
+                    </div>
+                    <div class="weather-grid">
+                        <div class="weather-item">
+                            <div class="icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                            <div class="value">28°C</div>
+                            <div class="label">Temperature</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="icon">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div class="value">75%</div>
+                            <div class="label">Humidity</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="icon">
+                                <i class="fas fa-wind"></i>
+                            </div>
+                            <div class="value">12 km/h</div>
+                            <div class="label">Wind Speed</div>
+                        </div>
+                        <div class="weather-item">
+                            <div class="icon">
+                                <i class="fas fa-cloud-rain"></i>
+                            </div>
+                            <div class="value">20%</div>
+                            <div class="label">Rain Chance</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+
+        // Debug navigation issues
+        document.addEventListener('DOMContentLoaded', function() {
+            // Debug navigation links
+            const navLinks = document.querySelectorAll('.nav-link');
+            console.log('Found', navLinks.length, 'navigation links');
+            
+            navLinks.forEach((link, index) => {
+                console.log(`Link ${index}:`, link.href, link.textContent.trim());
+                
+                link.addEventListener('click', function(e) {
+                    console.log('Link clicked:', this.href);
+                    console.log('Event target:', e.target);
+                    console.log('Event currentTarget:', e.currentTarget);
+                    
+                    // Check if the link has a valid href
+                    if (this.href && this.href !== '#' && !this.href.includes('#')) {
+                        console.log('Navigating to:', this.href);
+                        // Force navigation
+                        window.location.href = this.href;
+                    } else {
+                        console.log('Invalid or hash link:', this.href);
+                    }
+                });
+            });
+        });
+    </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
+</body>
+</html>

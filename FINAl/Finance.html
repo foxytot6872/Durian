@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance - Durian Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Durian Dashboard</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Finance</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">2</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span>Durian Farmer</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Main Finance Layout -->
+                <div class="finance-main-layout">
+                    <!-- Daily Expenses Chart -->
+                    <div class="chart-widget daily-expenses">
+                        <div class="widget-header">
+                            <h3>Daily expenses</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="dailyExpensesChart"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot income"></span>
+                                <span>INCOME</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot expense"></span>
+                                <span>EXPENSE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expense Breakdown Donut Chart -->
+                    <div class="chart-widget expense-breakdown">
+                        <div class="widget-header">
+                            <h3>Expense Breakdown</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="expenseBreakdownChart"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-square electricity"></span>
+                                <span>Electricity bill</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-square water"></span>
+                                <span>Water bill</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-square fertilizer"></span>
+                                <span>Fertilizer</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Expenses Chart -->
+                    <div class="chart-widget monthly-expenses">
+                        <div class="widget-header">
+                            <h3>Monthly expenses</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="monthlyExpensesChart"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot income"></span>
+                                <span>INCOME</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot expense"></span>
+                                <span>EXPENSE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Value Cards -->
+                <div class="total-value-cards">
+                    <div class="total-card">
+                        <div class="total-label">Total :</div>
+                        <div class="total-amount">6xx $</div>
+                    </div>
+                    <div class="total-card">
+                        <div class="total-label">Total :</div>
+                        <div class="total-amount">5XXX $</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Expense Modal -->
+            <div class="modal" id="expenseModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add New Expense</h3>
+                        <button class="modal-close" id="closeExpenseModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="expenseForm">
+                            <div class="form-group">
+                                <label for="expenseDate">Date</label>
+                                <input type="date" id="expenseDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseCategory">Category</label>
+                                <select id="expenseCategory" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Fertilizer">Fertilizer</option>
+                                    <option value="Labor">Labor</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Seeds">Seeds</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseAmount">Amount (฿)</label>
+                                <input type="number" id="expenseAmount" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseDescription">Description</label>
+                                <textarea id="expenseDescription" placeholder="Enter expense description..." rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="cancelExpense">Cancel</button>
+                                <button type="submit" class="btn-primary">Add Expense</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/finance.css">
+    
+    <!-- JavaScript -->
+    <script src="js/finance-main.js"></script>
+    
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+    </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
+</body>
+</html>

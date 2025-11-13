@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soil Analysis - Durian Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="js/firebase-realtime.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Durian Dashboard</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Soil Analysis</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">1</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span>Durian Farmer</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Zone Selector -->
+                <div class="zone-selector" style="margin-bottom: 2rem; padding: 1rem; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h3 style="margin: 0 0 1rem 0; color: #333;">Select Zone to Monitor</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="zone-btn active" data-zone="A" style="padding: 0.5rem 1rem; border: 2px solid #4CAF50; background: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">Zone A</button>
+                        <button class="zone-btn" data-zone="B" style="padding: 0.5rem 1rem; border: 2px solid #ddd; background: white; color: #333; border-radius: 5px; cursor: pointer;">Zone B</button>
+                        <button class="zone-btn" data-zone="C" style="padding: 0.5rem 1rem; border: 2px solid #ddd; background: white; color: #333; border-radius: 5px; cursor: pointer;">Zone C</button>
+                        <button class="zone-btn" data-zone="D" style="padding: 0.5rem 1rem; border: 2px solid #ddd; background: white; color: #333; border-radius: 5px; cursor: pointer;">Zone D</button>
+                    </div>
+                    <div id="zone-status" style="margin-top: 1rem; padding: 0.5rem; background: #f0f0f0; border-radius: 5px; font-size: 0.9rem; color: #666;">
+                        📡 Waiting for sensor data from Zone A...
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="soil-moisture">--%</h3>
+                            <p>Soil Moisture</p>
+                            <span class="stat-change positive" id="moisture-change">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="soil-ph">--</h3>
+                            <p>pH Level</p>
+                            <span class="stat-change positive" id="ph-status">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-temperature-empty"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="soil-temperature">--°C</h3>
+                            <p>Temperature</p>
+                            <span class="stat-change positive" id="temp-change">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Good</h3>
+                            <p>Nutrient Level</p>
+                            <span class="stat-change positive">Stable</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-spa"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>30 smg/kg</h3>
+                            <p>Nitrogen</p>
+                            <span class="stat-change positive">Optimal</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-brands fa-pagelines"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>60 mg/kg</h3>
+                            <p>Phosphorus</p>
+                            <span class="stat-change positive">Optimal</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-brands fa-canadian-maple-leaf"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>200 mg/kg</h3>
+                            <p>Potassium</p>
+                            <span class="stat-change positive">Optimal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Soil Health Trends</h3>
+                        <div class="chart-controls">
+                            <select>
+                                <option>Last 30 days</option>
+                                <option>Last 3 months</option>
+                                <option>Last year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="soilChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+
+        // Zone selector functionality
+        let selectedZone = 'A';
+        let lastData = {};
+
+        // Zone button click handlers
+        document.querySelectorAll('.zone-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.zone-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'white';
+                    b.style.color = '#333';
+                    b.style.border = '2px solid #ddd';
+                });
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                this.style.background = '#4CAF50';
+                this.style.color = 'white';
+                this.style.border = '2px solid #4CAF50';
+                
+                selectedZone = this.dataset.zone;
+                updateZoneStatus();
+                
+                // Update display with last known data for this zone
+                if (lastData[selectedZone]) {
+                    updateSoilDisplay(lastData[selectedZone]);
+                }
+            });
+        });
+
+        function updateZoneStatus() {
+            const statusEl = document.getElementById('zone-status');
+            if (lastData[selectedZone]) {
+                const data = lastData[selectedZone];
+                const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+                statusEl.innerHTML = `✅ Live data from Zone ${selectedZone} - Last update: ${timestamp}`;
+                statusEl.style.background = '#d4edda';
+                statusEl.style.color = '#155724';
+            } else {
+                statusEl.innerHTML = `📡 Waiting for sensor data from Zone ${selectedZone}...`;
+                statusEl.style.background = '#f0f0f0';
+                statusEl.style.color = '#666';
+            }
+        }
+
+        function updateSoilDisplay(data) {
+            // Update soil moisture
+            const moistureEl = document.getElementById('soil-moisture');
+            const moistureChangeEl = document.getElementById('moisture-change');
+            if (moistureEl && data.moisture !== undefined) {
+                moistureEl.textContent = `${Math.round(data.moisture)}%`;
+                
+                // Update moisture status
+                if (data.moisture < 30) {
+                    moistureChangeEl.textContent = 'Low';
+                    moistureChangeEl.className = 'stat-change negative';
+                } else if (data.moisture < 50) {
+                    moistureChangeEl.textContent = 'Moderate';
+                    moistureChangeEl.className = 'stat-change warning';
+                } else {
+                    moistureChangeEl.textContent = 'Optimal';
+                    moistureChangeEl.className = 'stat-change positive';
+                }
+            }
+
+            // Update pH (if available)
+            const phEl = document.getElementById('soil-ph');
+            const phStatusEl = document.getElementById('ph-status');
+            if (phEl && data.ph !== undefined) {
+                phEl.textContent = data.ph.toFixed(1);
+                
+                // Update pH status
+                if (data.ph < 6.0 || data.ph > 7.5) {
+                    phStatusEl.textContent = 'Needs Adjustment';
+                    phStatusEl.className = 'stat-change negative';
+                } else {
+                    phStatusEl.textContent = 'Optimal';
+                    phStatusEl.className = 'stat-change positive';
+                }
+            } else {
+                phEl.textContent = '--';
+                phStatusEl.textContent = 'No pH Sensor';
+                phStatusEl.className = 'stat-change warning';
+            }
+
+            // Update temperature
+            const tempEl = document.getElementById('soil-temperature');
+            const tempChangeEl = document.getElementById('temp-change');
+            if (tempEl && data.temperature !== undefined) {
+                tempEl.textContent = `${Math.round(data.temperature)}°C`;
+                
+                // Update temperature status
+                if (data.temperature < 20 || data.temperature > 35) {
+                    tempChangeEl.textContent = 'Extreme';
+                    tempChangeEl.className = 'stat-change negative';
+                } else if (data.temperature < 25 || data.temperature > 30) {
+                    tempChangeEl.textContent = 'Moderate';
+                    tempChangeEl.className = 'stat-change warning';
+                } else {
+                    tempChangeEl.textContent = 'Optimal';
+                    tempChangeEl.className = 'stat-change positive';
+                }
+            }
+        }
+
+        // Listen for Firebase data updates
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for Firebase to be ready
+            setTimeout(() => {
+                if (window.firebaseRealtime) {
+                    // Override the updateZoneDisplay method to also update soil page
+                    const originalUpdateZoneDisplay = window.firebaseRealtime.updateZoneDisplay;
+                    window.firebaseRealtime.updateZoneDisplay = function(zoneId, data) {
+                        // Call original method
+                        originalUpdateZoneDisplay.call(this, zoneId, data);
+                        
+                        // Store data for soil page
+                        lastData[zoneId] = data;
+                        
+                        // Update soil page if this is the selected zone
+                        if (zoneId === selectedZone) {
+                            updateSoilDisplay(data);
+                            updateZoneStatus();
+                        }
+                    };
+                }
+            }, 1000);
+        });
+    </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
+</body>
+</html>

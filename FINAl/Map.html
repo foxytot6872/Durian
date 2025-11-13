@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Map - Durian Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/zone-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="module" src="js/firebase-realtime.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <span>Durian Dashboard</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="today's recommendation.html" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Today's Recommendation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="weather.html" class="nav-link">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>Weather Forecast</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="map.html" class="nav-link">
+                        <i class="fas fa-map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Soil.html" class="nav-link">
+                        <i class="fas fa-mountain"></i>
+                        <span>Soil Analysis</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="Settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Farm Map</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">0</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span>Durian Farmer</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Zone Camera Feed -->
+                <div class="camera-section">
+                    <div class="camera-header">
+                        <div class="camera-info">
+                            <h2 id="zoneTitle">Zone A - North Field</h2>
+                            <div class="camera-status">
+                                <span class="status-indicator live"></span>
+                                <span>Live Camera Feed</span>
+                            </div>
+                        </div>
+                        <div class="camera-controls">
+                            <button class="btn-secondary" id="fullscreenBtn">
+                                <i class="fas fa-expand"></i>
+                                Fullscreen
+                            </button>
+                            <button class="btn-secondary" id="recordBtn">
+                                <i class="fas fa-video"></i>
+                                Record
+                            </button>
+                            <button class="btn-secondary" id="backBtn">
+                                <i class="fas fa-arrow-left"></i>
+                                Back to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="camera-container">
+                        <div class="camera-feed" id="cameraFeed">
+                            <div class="camera-placeholder">
+                                <i class="fas fa-video" style="font-size: 4rem; color: #4ba252; margin-bottom: 1rem;"></i>
+                                <h3 id="cameraTitle">Zone A - North Field Live Feed</h3>
+                                <p id="cameraDescription">Monitoring durian trees and soil conditions</p>
+                                <div class="camera-stats">
+                                    <div class="stat">
+                                        <span class="stat-label">Resolution</span>
+                                        <span class="stat-value">1080p HD</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">FPS</span>
+                                        <span class="stat-value">30</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-label">Status</span>
+                                        <span class="stat-value live">Live</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Zone Information -->
+                <div class="zone-info-section">
+                    <div class="zone-details">
+                        <div class="zone-details-header">
+                            <h3>Zone Information</h3>
+                            <span class="zone-badge" id="zoneStatusBadge">Active</span>
+                        </div>
+                        <div class="zone-metrics-grid" id="zoneMetrics">
+                            <!-- Zone metrics will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Valve Control System -->
+                <div class="valve-control-section">
+                    <div class="valve-control-header">
+                        <h3>Valve Control System</h3>
+                        <div class="valve-status-indicator">
+                            <span class="status-dot" id="valveStatusDot"></span>
+                            <span id="valveStatusText">System Ready</span>
+                        </div>
+                    </div>
+                    
+                    <div class="valve-controls-grid">
+                        <div class="valve-control-card">
+                            <div class="valve-header">
+                                <h4>Watering System</h4>
+                                <div class="valve-toggle" id="wateringToggle">
+                                    <input type="checkbox" id="wateringValve" class="valve-switch">
+                                    <label for="wateringValve" class="valve-label">
+                                        <span class="valve-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="valve-metrics">
+                                <div class="valve-metric">
+                                    <span class="metric-label">Water Pressure</span>
+                                    <span class="metric-value" id="waterPressure">2.5 bar</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Flow Rate</span>
+                                    <span class="metric-value" id="flowRate">15 L/min</span>
+                                </div>
+                                <div class="valve-metric">
+                                    <span class="metric-label">Duration</span>
+                                    <span class="metric-value" id="wateringDuration">30 min</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zone Status Dashboard -->
+                <div class="zone-status-dashboard">
+                    <div class="status-header">
+                        <h3>Zone Status Dashboard</h3>
+                        <div class="status-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                        </div>
+                    </div>
+                    
+                    <div class="status-cards-grid" id="statusCardsGrid">
+                        <!-- Status cards will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Field Status</h3>
+                            <button class="btn-secondary">View Details</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field ID</th>
+                                        <th>Area (hectares)</th>
+                                        <th>Status</th>
+                                        <th>Last Update</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Field A-01</td>
+                                        <td>2.5</td>
+                                        <td><span class="status-badge completed">Healthy</span></td>
+                                        <td>2 hours ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Field A-02</td>
+                                        <td>3.2</td>
+                                        <td><span class="status-badge pending">Monitoring</span></td>
+                                        <td>1 hour ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Field B-01</td>
+                                        <td>1.8</td>
+                                        <td><span class="status-badge completed">Healthy</span></td>
+                                        <td>30 minutes ago</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/zone-navigation.js"></script>
+    
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+        
+        // Back to Dashboard button - direct handler as backup
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+        }
+        
+        // Debug Map page loading
+        console.log('Map page loaded');
+        console.log('Selected zone:', localStorage.getItem('selectedZone'));
+        console.log('Selected zone name:', localStorage.getItem('selectedZoneName'));
+    </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
+</body>
+</html>
