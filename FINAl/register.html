@@ -33,12 +33,7 @@
                     <label for="register-password">Password</label>
                     <input type="password" id="register-password" name="password" placeholder="Create a password" minlength="6" required>
                 </div>
-
-                <div class="auth-field">
-                    <label for="register-confirm">Confirm Password</label>
-                    <input type="password" id="register-confirm" name="confirmPassword" placeholder="Repeat your password" minlength="6" required>
-                </div>
-
+                
                 <div class="auth-checkbox">
                     <input type="checkbox" id="register-terms" name="terms" required>
                     <label for="register-terms">I agree to the terms and privacy policy</label>
@@ -62,9 +57,7 @@
             </footer>
         </section>
     </div>
-    <!-- Load auth service first, then auth UI handler -->
-    <script src="js/auth-service.js"></script>
-    <script src="js/auth.js"></script>
+    <!-- 🚨 IMPORTANT: Load script as a MODULE for Firebase v9+ syntax -->
+    <script type="module" src="js/auth.js"></script> 
 </body>
 </html>
-
