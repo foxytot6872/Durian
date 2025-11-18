@@ -24,7 +24,7 @@
             
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="main.html" class="nav-link">
+                    <a href="index.html" class="nav-link">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
                     </a>
@@ -60,7 +60,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#settings" class="nav-link">
+                    <a href="Settings.html" class="nav-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
@@ -289,5 +289,9 @@
             });
         });
     </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
 </body>
 </html>

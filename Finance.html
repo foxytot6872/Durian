@@ -21,7 +21,7 @@
             
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="main.html" class="nav-link">
+                    <a href="index.html" class="nav-link">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
                     </a>
@@ -39,7 +39,7 @@
                     </a>
                 </li>
                 <li class="nav-item active">
-                    <a href="Finance.html" class="nav-link">
+                    <a href="finance.html" class="nav-link">
                         <i class="fas fa-dollar-sign"></i>
                         <span>Finance</span>
                     </a>
@@ -57,7 +57,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#settings" class="nav-link">
+                    <a href="Settings.html" class="nav-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
@@ -90,159 +90,149 @@
 
             <!-- Dashboard Content -->
             <div class="dashboard-content">
-                <!-- Stats Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-dollar-sign"></i>
+                <!-- Main Finance Layout -->
+                <div class="finance-main-layout">
+                    <!-- Daily Expenses Chart -->
+                    <div class="chart-widget daily-expenses">
+                        <div class="widget-header">
+                            <h3>Daily expenses</h3>
                         </div>
-                        <div class="stat-content">
-                            <h3>฿125,000</h3>
-                            <p>Total Revenue</p>
-                            <span class="stat-change positive">+15.3%</span>
+                        <div class="chart-container">
+                            <canvas id="dailyExpensesChart"></canvas>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>฿85/kg</h3>
-                            <p>Average Price</p>
-                            <span class="stat-change positive">+8.2%</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>1,470 kg</h3>
-                            <p>Total Sales</p>
-                            <span class="stat-change positive">+12.5%</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-wallet"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>฿45,000</h3>
-                            <p>Expenses</p>
-                            <span class="stat-change negative">+5.1%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Section -->
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Revenue Overview</h3>
-                            <div class="chart-controls">
-                                <select>
-                                    <option>Last 7 days</option>
-                                    <option>Last 30 days</option>
-                                    <option>Last 3 months</option>
-                                </select>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot income"></span>
+                                <span>INCOME</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot expense"></span>
+                                <span>EXPENSE</span>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Expense Breakdown Donut Chart -->
+                    <div class="chart-widget expense-breakdown">
+                        <div class="widget-header">
+                            <h3>Expense Breakdown</h3>
+                        </div>
                         <div class="chart-container">
-                            <canvas id="revenueChart"></canvas>
+                            <canvas id="expenseBreakdownChart"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-square electricity"></span>
+                                <span>Electricity bill</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-square water"></span>
+                                <span>Water bill</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-square fertilizer"></span>
+                                <span>Fertilizer</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Profit vs Expenses</h3>
+
+                    <!-- Monthly Expenses Chart -->
+                    <div class="chart-widget monthly-expenses">
+                        <div class="widget-header">
+                            <h3>Monthly expenses</h3>
                         </div>
                         <div class="chart-container">
-                            <canvas id="profitChart"></canvas>
+                            <canvas id="monthlyExpensesChart"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot income"></span>
+                                <span>INCOME</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot expense"></span>
+                                <span>EXPENSE</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Data Tables -->
-                <div class="tables-grid">
-                    <div class="table-card">
-                        <div class="table-header">
-                            <h3>Recent Transactions</h3>
-                            <button class="btn-secondary">View All</button>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>2024-01-15</td>
-                                        <td>Sale</td>
-                                        <td>฿15,000</td>
-                                        <td><span class="status-badge completed">Completed</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>2024-01-14</td>
-                                        <td>Expense</td>
-                                        <td>฿-2,500</td>
-                                        <td><span class="status-badge pending">Pending</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>2024-01-13</td>
-                                        <td>Sale</td>
-                                        <td>฿12,000</td>
-                                        <td><span class="status-badge completed">Completed</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <!-- Total Value Cards -->
+                <div class="total-value-cards">
+                    <div class="total-card">
+                        <div class="total-label">Total :</div>
+                        <div class="total-amount">6xx $</div>
                     </div>
-                    <div class="table-card">
-                        <div class="table-header">
-                            <h3>Monthly Summary</h3>
-                            <button class="btn-secondary">Export</button>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Month</th>
-                                        <th>Revenue</th>
-                                        <th>Expenses</th>
-                                        <th>Profit</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>January 2024</td>
-                                        <td>฿125,000</td>
-                                        <td>฿45,000</td>
-                                        <td>฿80,000</td>
-                                    </tr>
-                                    <tr>
-                                        <td>December 2023</td>
-                                        <td>฿98,000</td>
-                                        <td>฿42,000</td>
-                                        <td>฿56,000</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="total-card">
+                        <div class="total-label">Total :</div>
+                        <div class="total-amount">5XXX $</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Expense Modal -->
+            <div class="modal" id="expenseModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add New Expense</h3>
+                        <button class="modal-close" id="closeExpenseModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="expenseForm">
+                            <div class="form-group">
+                                <label for="expenseDate">Date</label>
+                                <input type="date" id="expenseDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseCategory">Category</label>
+                                <select id="expenseCategory" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Fertilizer">Fertilizer</option>
+                                    <option value="Labor">Labor</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Seeds">Seeds</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseAmount">Amount (฿)</label>
+                                <input type="number" id="expenseAmount" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseDescription">Description</label>
+                                <textarea id="expenseDescription" placeholder="Enter expense description..." rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="cancelExpense">Cancel</button>
+                                <button type="submit" class="btn-primary">Add Expense</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/finance.css">
+    
+    <!-- JavaScript -->
+    <script src="js/finance-main.js"></script>
+    
     <script>
         // Mobile menu toggle
         document.querySelector('.menu-toggle').addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
         });
     </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
 </body>
 </html>

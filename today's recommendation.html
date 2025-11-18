@@ -23,7 +23,7 @@
             
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="main.html" class="nav-link">
+                    <a href="index.html" class="nav-link">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
                     </a>
@@ -59,7 +59,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#settings" class="nav-link">
+                    <a href="Settings.html" class="nav-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
@@ -217,119 +217,12 @@
                     </div>
                 </div>
 
-                <!-- Chart Section -->
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h3>Soil Moisture Trend (Last 7 Days)</h3>
-                        <select id="timeRange" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
-                            <option value="7">Last 7 days</option>
-                            <option value="14">Last 14 days</option>
-                            <option value="30">Last 30 days</option>
-                        </select>
-                    </div>
-                    <div class="chart-canvas">
-                        <canvas id="soilMoistureChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button class="btn-primary" onclick="generateReport()">
-                        <i class="fas fa-file-pdf"></i> Generate Report
-                    </button>
-                    <button class="btn-secondary" onclick="scheduleReminder()">
-                        <i class="fas fa-bell"></i> Set Reminder
-                    </button>
-                    <button class="btn-secondary" onclick="shareRecommendations()">
-                        <i class="fas fa-share"></i> Share
-                    </button>
-                </div>
             </div>
         </main>
     </div>
 
     <!-- JavaScript -->
     <script>
-        // Initialize the soil moisture chart
-        function initSoilMoistureChart() {
-            const ctx = document.getElementById('soilMoistureChart').getContext('2d');
-            
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Soil Moisture %',
-                        data: [62, 58, 65, 68, 70, 65, 65],
-                        borderColor: '#4ba252',
-                        backgroundColor: 'rgba(75, 162, 82, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#4ba252',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            ticks: {
-                                color: '#64748b'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#64748b'
-                            }
-                        }
-                    },
-                    elements: {
-                        point: {
-                            hoverRadius: 8
-                        }
-                    }
-                }
-            });
-        }
-
-        // Action functions
-        function generateReport() {
-            alert('Generating comprehensive farm report...');
-        }
-
-        function scheduleReminder() {
-            alert('Setting up reminder for next fertilizer application...');
-        }
-
-        function shareRecommendations() {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Durian Farm Recommendations',
-                    text: 'Check out today\'s recommendations for my durian farm!',
-                    url: window.location.href
-                });
-            } else {
-                alert('Recommendations copied to clipboard!');
-            }
-        }
-
         // Mobile menu toggle
         document.querySelector('.menu-toggle').addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
@@ -337,8 +230,6 @@
 
         // Debug navigation issues
         document.addEventListener('DOMContentLoaded', function() {
-            initSoilMoistureChart();
-            
             // Debug navigation links
             const navLinks = document.querySelectorAll('.nav-link');
             console.log('Found', navLinks.length, 'navigation links');
@@ -362,12 +253,10 @@
                 });
             });
         });
-
-        // Update time range
-        document.getElementById('timeRange').addEventListener('change', function() {
-            // In a real application, this would fetch new data
-            console.log('Time range changed to:', this.value);
-        });
     </script>
+    <!-- Auth scripts - load in order: service, protection, UI updates -->
+    <script src="js/auth-service.js"></script>
+    <script src="js/route-protection.js"></script>
+    <script src="js/auth-check.js"></script>
 </body>
 </html>
