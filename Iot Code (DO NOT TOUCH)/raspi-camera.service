@@ -1,0 +1,21 @@
+[Unit]
+Description=Raspberry Pi Device Manager - Firebase Camera Feed Publisher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/raspi-device-manager
+ExecStart=/usr/bin/python3 /home/pi/raspi-device-manager/raspi_device_manager.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables (optional)
+# Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
+

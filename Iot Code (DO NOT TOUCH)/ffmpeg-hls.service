@@ -1,0 +1,18 @@
+[Unit]
+Description=FFmpeg HLS Stream Converter - RTSP to HLS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/raspi-device-manager
+ExecStart=/usr/bin/python3 /home/pi/raspi-device-manager/ffmpeg_hls_launcher.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

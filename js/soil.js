@@ -1,455 +1,276 @@
-// Soil Analysis Page JavaScript - Handles soil monitoring functionality
+// Soil Analysis Page JavaScript - Uses Firebase Dashboard Manager
 class SoilDashboard {
     constructor() {
-        this.soilData = null;
-        this.charts = {};
+        this.selectedZone = null;
+        this.firebaseDashboard = null;
+        this.zones = [];
         this.init();
     }
 
     init() {
-        this.loadSoilData();
-        this.initializeCharts();
-        this.setupEventListeners();
-        this.updateSoilDisplay();
+        this.waitForFirebase();
     }
 
-    loadSoilData() {
-        // Simulate soil data loading
-        this.soilData = {
-            summary: {
-                overallHealth: 85,
-                phLevel: 6.2,
-                moisture: 65,
-                temperature: 28,
-                nutrients: {
-                    nitrogen: 75,
-                    phosphorus: 68,
-                    potassium: 82,
-                    organicMatter: 4.2
-                }
-            },
-            zones: [
-                {
-                    name: 'Zone A',
-                    ph: 6.1,
-                    moisture: 68,
-                    temperature: 27,
-                    nutrients: { nitrogen: 78, phosphorus: 70, potassium: 85 },
-                    health: 88
-                },
-                {
-                    name: 'Zone B',
-                    ph: 6.3,
-                    moisture: 62,
-                    temperature: 29,
-                    nutrients: { nitrogen: 72, phosphorus: 65, potassium: 80 },
-                    health: 82
-                },
-                {
-                    name: 'Zone C',
-                    ph: 5.8,
-                    moisture: 45,
-                    temperature: 32,
-                    nutrients: { nitrogen: 65, phosphorus: 58, potassium: 70 },
-                    health: 65
-                },
-                {
-                    name: 'Zone D',
-                    ph: 6.4,
-                    moisture: 71,
-                    temperature: 26,
-                    nutrients: { nitrogen: 80, phosphorus: 75, potassium: 88 },
-                    health: 92
-                }
-            ],
-            history: {
-                ph: [6.0, 6.1, 6.2, 6.1, 6.3, 6.2, 6.2],
-                moisture: [60, 65, 68, 62, 70, 65, 65],
-                temperature: [26, 27, 28, 29, 27, 28, 28],
-                nitrogen: [70, 72, 75, 73, 78, 75, 75],
-                phosphorus: [65, 67, 68, 66, 70, 68, 68],
-                potassium: [78, 80, 82, 79, 85, 82, 82]
+    waitForFirebase() {
+        if (window.firebaseDashboard) {
+            this.firebaseDashboard = window.firebaseDashboard;
+            this.setupFirebaseListener();
+            this.loadZones();
+        } else {
+            setTimeout(() => this.waitForFirebase(), 500);
+        }
+    }
+
+    setupFirebaseListener() {
+        if (this.firebaseDashboard) {
+            // Register callback to be notified when data updates
+            this.firebaseDashboard.onUpdate(() => {
+                this.updateSoilDisplay();
+            });
+            
+            // Also set up polling as backup (updates every 5 seconds)
+            setInterval(() => {
+                this.updateSoilDisplay();
+            }, 5000);
+            
+            // Initial update
+            this.loadZones();
+            this.updateSoilDisplay();
+        }
+    }
+
+    loadZones() {
+        if (!this.firebaseDashboard) return;
+
+        const allDevices = this.firebaseDashboard.getDevices();
+        
+        // Group devices by zone
+        const zonesMap = new Map();
+        for (const device of allDevices) {
+            const zone = device.zone;
+            if (!zone) continue;
+            
+            if (!zonesMap.has(zone)) {
+                zonesMap.set(zone, []);
             }
-        };
+            zonesMap.get(zone).push(device);
+        }
+
+        this.zones = Array.from(zonesMap.keys()).sort((a, b) => {
+            const zoneA = a.replace('Zone ', '').trim();
+            const zoneB = b.replace('Zone ', '').trim();
+            return zoneA.localeCompare(zoneB);
+        });
+
+        this.renderZoneButtons();
+
+        // Select first zone if none selected
+        if (!this.selectedZone && this.zones.length > 0) {
+            this.selectZone(this.zones[0]);
+        }
+    }
+
+    renderZoneButtons() {
+        const container = document.getElementById('zoneButtonsContainer');
+        if (!container) return;
+
+        if (this.zones.length === 0) {
+            container.innerHTML = '<p style="color: #718096; padding: 1rem;">No zones with devices found. Claim a device to get started.</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        
+        this.zones.forEach(zone => {
+            const zoneLetter = zone.replace('Zone ', '').trim();
+            const button = document.createElement('button');
+            button.className = 'zone-btn';
+            button.setAttribute('data-zone', zoneLetter);
+            button.textContent = zone;
+            button.style.cssText = 'padding: 0.5rem 1rem; border: 2px solid #ddd; background: white; color: #333; border-radius: 5px; cursor: pointer;';
+            
+            if (this.selectedZone === zone) {
+                button.classList.add('active');
+                button.style.background = '#4CAF50';
+                button.style.color = 'white';
+                button.style.border = '2px solid #4CAF50';
+            }
+
+            button.addEventListener('click', () => {
+                this.selectZone(zone);
+            });
+
+            container.appendChild(button);
+        });
+    }
+
+    selectZone(zone) {
+        this.selectedZone = zone;
+        this.renderZoneButtons();
+        this.updateSoilDisplay();
+        this.updateZoneStatus();
+    }
+
+    updateZoneStatus() {
+        const statusEl = document.getElementById('zone-status');
+        if (!statusEl) return;
+
+        if (!this.selectedZone) {
+            statusEl.innerHTML = '📡 Please select a zone';
+            statusEl.style.background = '#f0f0f0';
+            statusEl.style.color = '#666';
+            return;
+        }
+
+        const devices = this.firebaseDashboard.getDevicesByZone(this.selectedZone);
+        if (devices.length === 0) {
+            statusEl.innerHTML = `📡 No devices found for ${this.selectedZone}`;
+            statusEl.style.background = '#f0f0f0';
+            statusEl.style.color = '#666';
+            return;
+        }
+
+        const device = devices[0];
+        if (device.sensorData && device.sensorData.timestamp) {
+            const timestamp = this.formatTimestamp(device.sensorData.timestamp);
+            statusEl.innerHTML = `✅ Live data from ${this.selectedZone} - Last update: ${timestamp}`;
+            statusEl.style.background = '#d4edda';
+            statusEl.style.color = '#155724';
+        } else {
+            statusEl.innerHTML = `📡 Waiting for sensor data from ${this.selectedZone}...`;
+            statusEl.style.background = '#f0f0f0';
+            statusEl.style.color = '#666';
+        }
     }
 
     updateSoilDisplay() {
-        this.updateSummaryCards();
-        this.updateZoneTable();
-        this.updateNutrientBreakdown();
-        this.updateRecommendations();
+        if (!this.firebaseDashboard || !this.selectedZone) return;
+
+        const devices = this.firebaseDashboard.getDevicesByZone(this.selectedZone);
+        if (devices.length === 0) {
+            this.clearDisplay();
+            return;
+        }
+
+        // Use first device's sensor data (or aggregate if multiple)
+        const device = devices[0];
+        const sensorData = device.sensorData;
+
+        if (!sensorData) {
+            this.clearDisplay();
+            return;
+        }
+
+        // Update all soil metrics
+        this.updateMetric('soil-moisture', sensorData.moisture, '%', 'moisture-change', (val) => {
+            if (val < 30) return { text: 'Low', class: 'negative' };
+            if (val < 50) return { text: 'Moderate', class: 'warning' };
+            return { text: 'Optimal', class: 'positive' };
+        });
+
+        this.updateMetric('soil-ph', sensorData.ph, '', 'ph-status', (val) => {
+            if (val < 6.0 || val > 7.5) return { text: 'Needs Adjustment', class: 'negative' };
+            return { text: 'Optimal', class: 'positive' };
+        }, true);
+
+        this.updateMetric('soil-temperature', sensorData.temperature, '°C', 'temp-change', (val) => {
+            if (val < 20 || val > 35) return { text: 'Extreme', class: 'negative' };
+            if (val < 25 || val > 30) return { text: 'Moderate', class: 'warning' };
+            return { text: 'Optimal', class: 'positive' };
+        });
+
+        this.updateMetric('soil-ec', sensorData.ec, ' µS/cm', 'ec-status', (val) => {
+            if (val > 2000) return { text: 'High', class: 'warning' };
+            return { text: 'Normal', class: 'positive' };
+        });
+
+        this.updateMetric('soil-nitrogen', sensorData.n, ' mg/kg', 'nitrogen-status', (val) => {
+            if (val < 10) return { text: 'Low', class: 'negative' };
+            return { text: 'Optimal', class: 'positive' };
+        });
+
+        this.updateMetric('soil-phosphorus', sensorData.p, ' mg/kg', 'phosphorus-status', (val) => {
+            if (val < 5) return { text: 'Low', class: 'negative' };
+            return { text: 'Optimal', class: 'positive' };
+        });
+
+        this.updateMetric('soil-potassium', sensorData.k, ' mg/kg', 'potassium-status', (val) => {
+            if (val < 5) return { text: 'Low', class: 'negative' };
+            return { text: 'Optimal', class: 'positive' };
+        });
+
+        this.updateZoneStatus();
     }
 
-    updateSummaryCards() {
-        const summary = this.soilData.summary;
+    updateMetric(elementId, value, unit, statusId, statusFn, isDecimal = false) {
+        const element = document.getElementById(elementId);
+        const statusElement = document.getElementById(statusId);
         
-        this.updateCard('.ph-card .value', summary.phLevel.toFixed(1));
-        this.updateCard('.moisture-card .value', `${summary.moisture}%`);
-        this.updateCard('.temp-card .value', `${summary.temperature}°C`);
-        this.updateCard('.health-card .value', `${summary.overallHealth}%`);
-    }
-
-    updateCard(selector, value) {
-        const element = document.querySelector(selector);
         if (element) {
-            element.textContent = value;
-        }
-    }
-
-    updateZoneTable() {
-        const tbody = document.getElementById('zonesTableBody');
-        if (!tbody) return;
-
-        tbody.innerHTML = this.soilData.zones.map(zone => `
-            <tr>
-                <td>${zone.name}</td>
-                <td>${zone.ph.toFixed(1)}</td>
-                <td>${zone.moisture}%</td>
-                <td>${zone.temperature}°C</td>
-                <td>${zone.nutrients.nitrogen}%</td>
-                <td>${zone.nutrients.phosphorus}%</td>
-                <td>${zone.nutrients.potassium}%</td>
-                <td><span class="health-score ${this.getHealthClass(zone.health)}">${zone.health}%</span></td>
-            </tr>
-        `).join('');
-    }
-
-    updateNutrientBreakdown() {
-        const container = document.querySelector('.nutrient-breakdown');
-        if (!container) return;
-
-        const nutrients = this.soilData.summary.nutrients;
-        container.innerHTML = Object.entries(nutrients).map(([nutrient, value]) => `
-            <div class="nutrient-item">
-                <div class="nutrient-label">${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}</div>
-                <div class="nutrient-bar">
-                    <div class="nutrient-fill" style="width: ${value}%"></div>
-                </div>
-                <div class="nutrient-value">${value}%</div>
-            </div>
-        `).join('');
-    }
-
-    updateRecommendations() {
-        const container = document.querySelector('.recommendations');
-        if (!container) return;
-
-        const recommendations = this.generateRecommendations();
-        container.innerHTML = recommendations.map(rec => `
-            <div class="recommendation-item ${rec.priority}">
-                <div class="rec-icon">
-                    <i class="fas fa-${rec.icon}"></i>
-                </div>
-                <div class="rec-content">
-                    <div class="rec-title">${rec.title}</div>
-                    <div class="rec-description">${rec.description}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    generateRecommendations() {
-        const recommendations = [];
-        const summary = this.soilData.summary;
-
-        // pH recommendations
-        if (summary.phLevel < 6.0) {
-            recommendations.push({
-                title: 'Increase Soil pH',
-                description: 'Add lime to raise pH to optimal range (6.0-6.5)',
-                priority: 'high',
-                icon: 'arrow-up'
-            });
-        } else if (summary.phLevel > 6.5) {
-            recommendations.push({
-                title: 'Decrease Soil pH',
-                description: 'Add sulfur or organic matter to lower pH',
-                priority: 'medium',
-                icon: 'arrow-down'
-            });
-        }
-
-        // Moisture recommendations
-        if (summary.moisture < 50) {
-            recommendations.push({
-                title: 'Increase Irrigation',
-                description: 'Soil moisture is below optimal. Increase watering frequency.',
-                priority: 'high',
-                icon: 'tint'
-            });
-        } else if (summary.moisture > 80) {
-            recommendations.push({
-                title: 'Reduce Irrigation',
-                description: 'Soil is too wet. Reduce watering to prevent root rot.',
-                priority: 'medium',
-                icon: 'tint-slash'
-            });
-        }
-
-        // Nutrient recommendations
-        if (summary.nutrients.nitrogen < 70) {
-            recommendations.push({
-                title: 'Add Nitrogen Fertilizer',
-                description: 'Nitrogen levels are low. Apply nitrogen-rich fertilizer.',
-                priority: 'high',
-                icon: 'seedling'
-            });
-        }
-
-        if (summary.nutrients.phosphorus < 65) {
-            recommendations.push({
-                title: 'Add Phosphorus',
-                description: 'Phosphorus levels are low. Apply phosphorus fertilizer.',
-                priority: 'medium',
-                icon: 'leaf'
-            });
-        }
-
-        return recommendations;
-    }
-
-    getHealthClass(health) {
-        if (health >= 85) return 'excellent';
-        if (health >= 70) return 'good';
-        if (health >= 55) return 'fair';
-        return 'poor';
-    }
-
-    initializeCharts() {
-        this.createPhChart();
-        this.createMoistureChart();
-        this.createNutrientChart();
-        this.createTemperatureChart();
-    }
-
-    createPhChart() {
-        const ctx = document.getElementById('phChart');
-        if (!ctx) return;
-
-        this.charts.ph = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'],
-                datasets: [{
-                    label: 'pH Level',
-                    data: this.soilData.history.ph,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        min: 5.0,
-                        max: 7.0,
-                        title: {
-                            display: true,
-                            text: 'pH Level'
-                        }
-                    }
+            if (value !== undefined && value !== null) {
+                if (isDecimal) {
+                    element.textContent = value.toFixed(1) + unit;
+                } else {
+                    element.textContent = Math.round(value) + unit;
                 }
+            } else {
+                element.textContent = '--' + unit;
+            }
+        }
+
+        if (statusElement && value !== undefined && value !== null) {
+            const status = statusFn(value);
+            statusElement.textContent = status.text;
+            statusElement.className = `stat-change ${status.class}`;
+        } else if (statusElement) {
+            statusElement.textContent = 'No Data';
+            statusElement.className = 'stat-change warning';
+        }
+    }
+
+    clearDisplay() {
+        const metrics = ['soil-moisture', 'soil-ph', 'soil-temperature', 'soil-ec', 'soil-nitrogen', 'soil-phosphorus', 'soil-potassium'];
+        const statuses = ['moisture-change', 'ph-status', 'temp-change', 'ec-status', 'nitrogen-status', 'phosphorus-status', 'potassium-status'];
+        
+        metrics.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '--';
+        });
+        
+        statuses.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = 'No Data';
+                el.className = 'stat-change warning';
             }
         });
     }
 
-    createMoistureChart() {
-        const ctx = document.getElementById('moistureChart');
-        if (!ctx) return;
-
-        this.charts.moisture = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'],
-                datasets: [{
-                    label: 'Soil Moisture (%)',
-                    data: this.soilData.history.moisture,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: '#3b82f6',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Moisture (%)'
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    createNutrientChart() {
-        const ctx = document.getElementById('nutrientChart');
-        if (!ctx) return;
-
-        this.charts.nutrient = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: ['Nitrogen', 'Phosphorus', 'Potassium', 'Organic Matter'],
-                datasets: [{
-                    label: 'Current Levels',
-                    data: [
-                        this.soilData.summary.nutrients.nitrogen,
-                        this.soilData.summary.nutrients.phosphorus,
-                        this.soilData.summary.nutrients.potassium,
-                        this.soilData.summary.nutrients.organicMatter * 20 // Scale for radar chart
-                    ],
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                    pointBackgroundColor: '#10b981'
-                }, {
-                    label: 'Optimal Range',
-                    data: [80, 75, 85, 80],
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    pointBackgroundColor: '#f59e0b'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
-            }
-        });
-    }
-
-    createTemperatureChart() {
-        const ctx = document.getElementById('temperatureChart');
-        if (!ctx) return;
-
-        this.charts.temperature = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'],
-                datasets: [{
-                    label: 'Soil Temperature (°C)',
-                    data: this.soilData.history.temperature,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Temperature (°C)'
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    setupEventListeners() {
-        // Zone selection
-        const zoneRows = document.querySelectorAll('#zonesTableBody tr');
-        zoneRows.forEach((row, index) => {
-            row.addEventListener('click', () => {
-                this.selectZone(index);
-            });
-        });
-
-        // Export data
-        const exportBtn = document.querySelector('.export-data-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                this.exportSoilData();
-            });
+    formatTimestamp(timestamp) {
+        if (!timestamp) return 'Never';
+        
+        const now = Date.now();
+        const diff = now - timestamp;
+        
+        if (diff > 86400000) {
+            return 'Just now';
         }
-
-        // Refresh data
-        const refreshBtn = document.querySelector('.refresh-data-btn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                this.refreshSoilData();
-            });
+        
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        
+        if (hours > 0) {
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        } else if (minutes > 0) {
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        } else {
+            return 'Just now';
         }
-    }
-
-    selectZone(zoneIndex) {
-        const zone = this.soilData.zones[zoneIndex];
-        if (!zone) return;
-
-        // Update zone details
-        this.updateZoneDetails(zone);
-    }
-
-    updateZoneDetails(zone) {
-        const detailsContainer = document.querySelector('.zone-details');
-        if (!detailsContainer) return;
-
-        detailsContainer.innerHTML = `
-            <h3>${zone.name} Details</h3>
-            <div class="zone-metrics">
-                <div class="metric">
-                    <span class="metric-label">pH Level</span>
-                    <span class="metric-value">${zone.ph.toFixed(1)}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Moisture</span>
-                    <span class="metric-value">${zone.moisture}%</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Temperature</span>
-                    <span class="metric-value">${zone.temperature}°C</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Health Score</span>
-                    <span class="metric-value">${zone.health}%</span>
-                </div>
-            </div>
-        `;
-    }
-
-    exportSoilData() {
-        console.log('Exporting soil data...');
-        // Implement data export functionality
-    }
-
-    refreshSoilData() {
-        console.log('Refreshing soil data...');
-        this.loadSoilData();
-        this.updateSoilDisplay();
     }
 }
 
 // Initialize soil dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new SoilDashboard();
+    window.soilDashboard = new SoilDashboard();
 });

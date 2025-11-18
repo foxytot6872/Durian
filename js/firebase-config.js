@@ -23,3 +23,6 @@ const app = initializeApp(firebaseConfig);
 
 // Get Auth instance and export it for use in other modules
 export const auth = getAuth(app);
+
+// Also expose globally for non-module scripts
+window.firebaseAuth = auth;

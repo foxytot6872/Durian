@@ -90,9 +90,23 @@ import { auth } from './firebase-config.js';
             // 2. Sign in with popup. This must be run in the synchronous click context.
             // Persistence defaults to SESSION for popups.
             const result = await signInWithPopup(auth, provider);
+            const firebaseUser = result.user;
 
             // User successfully signed in
-            console.log('Google Sign-In successful:', result.user.email);
+            console.log('Google Sign-In successful:', firebaseUser.email);
+
+            // Sync Firebase auth with localStorage authService for route protection
+            if (window.authService && firebaseUser) {
+                const userSession = {
+                    id: firebaseUser.uid,
+                    name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                    email: firebaseUser.email || '',
+                    signedInAt: new Date().toISOString()
+                };
+                // Google sign-in defaults to session persistence
+                window.authService.setActiveUser(userSession, false);
+                console.log('✅ Google auth synced with authService');
+            }
 
             showFeedback('Signed in with Google! Redirecting to dashboard…', 'success');
             redirectWithDelay('index.html');
@@ -263,7 +277,20 @@ import { auth } from './firebase-config.js';
                 await setPersistence(auth, persistence);
 
                 // Firebase Modular: Sign in user
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const firebaseUser = userCredential.user;
+
+                // Sync Firebase auth with localStorage authService for route protection
+                if (window.authService && firebaseUser) {
+                    const userSession = {
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                        email: firebaseUser.email || email,
+                        signedInAt: new Date().toISOString()
+                    };
+                    window.authService.setActiveUser(userSession, remember);
+                    console.log('✅ Firebase auth synced with authService');
+                }
 
                 // Login successful
                 loginForm.reset();

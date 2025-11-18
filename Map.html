@@ -7,7 +7,49 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/zone-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script type="module" src="js/firebase-realtime.js"></script>
+    <style>
+        /* Loading Animation Styles */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #718096;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #4ba252;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-state p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        /* Hide loading when content is loaded */
+        .zone-metrics-grid:not(:has(.loading-state)) .loading-state,
+        .status-cards-grid:not(:has(.loading-state)) .loading-state {
+            display: none;
+        }
+    </style>
+    <!-- Load Firebase config and dashboard manager for real-time data -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/firebase-dashboard.js"></script>
+    <!-- HLS.js for video playback -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -95,7 +137,7 @@
                 <div class="camera-section">
                     <div class="camera-header">
                         <div class="camera-info">
-                            <h2 id="zoneTitle">Zone A - North Field</h2>
+                            <h2 id="zoneTitle">Loading Zone...</h2>
                             <div class="camera-status">
                                 <span class="status-indicator live"></span>
                                 <span>Live Camera Feed</span>
@@ -119,9 +161,16 @@
                     
                     <div class="camera-container">
                         <div class="camera-feed" id="cameraFeed">
-                            <div class="camera-placeholder">
+                            <video 
+                                id="cameraVideo" 
+                                style="width: 100%; height: 100%; object-fit: contain; display: none;"
+                                controls
+                                muted
+                                playsinline
+                            ></video>
+                            <div class="camera-placeholder" id="cameraPlaceholder">
                                 <i class="fas fa-video" style="font-size: 4rem; color: #4ba252; margin-bottom: 1rem;"></i>
-                                <h3 id="cameraTitle">Zone A - North Field Live Feed</h3>
+                                <h3 id="cameraTitle">Loading Zone Feed...</h3>
                                 <p id="cameraDescription">Monitoring durian trees and soil conditions</p>
                                 <div class="camera-stats">
                                     <div class="stat">
@@ -134,7 +183,7 @@
                                     </div>
                                     <div class="stat">
                                         <span class="stat-label">Status</span>
-                                        <span class="stat-value live">Live</span>
+                                        <span class="stat-value live">Loading...</span>
                                     </div>
                                 </div>
                             </div>
@@ -147,10 +196,14 @@
                     <div class="zone-details">
                         <div class="zone-details-header">
                             <h3>Zone Information</h3>
-                            <span class="zone-badge" id="zoneStatusBadge">Active</span>
+                            <span class="zone-badge" id="zoneStatusBadge">Loading...</span>
                         </div>
                         <div class="zone-metrics-grid" id="zoneMetrics">
-                            <!-- Zone metrics will be populated by JavaScript -->
+                            <!-- Loading state -->
+                            <div class="loading-state" id="zoneMetricsLoading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading zone data...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -204,7 +257,11 @@
                     </div>
                     
                     <div class="status-cards-grid" id="statusCardsGrid">
-                        <!-- Status cards will be populated by JavaScript -->
+                        <!-- Loading state -->
+                        <div class="loading-state" id="statusCardsLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading status information...</p>
+                        </div>
                     </div>
                 </div>
 
@@ -219,29 +276,20 @@
                                 <thead>
                                     <tr>
                                         <th>Field ID</th>
-                                        <th>Area (hectares)</th>
+                                        <th>Devices</th>
                                         <th>Status</th>
                                         <th>Last Update</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Field A-01</td>
-                                        <td>2.5</td>
-                                        <td><span class="status-badge completed">Healthy</span></td>
-                                        <td>2 hours ago</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Field A-02</td>
-                                        <td>3.2</td>
-                                        <td><span class="status-badge pending">Monitoring</span></td>
-                                        <td>1 hour ago</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Field B-01</td>
-                                        <td>1.8</td>
-                                        <td><span class="status-badge completed">Healthy</span></td>
-                                        <td>30 minutes ago</td>
+                                <tbody id="fieldStatusTableBody">
+                                    <!-- Loading state -->
+                                    <tr id="fieldStatusLoading">
+                                        <td colspan="4" style="text-align: center; padding: 2rem;">
+                                            <div class="loading-state">
+                                                <div class="loading-spinner"></div>
+                                                <p>Loading field status...</p>
+                                            </div>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

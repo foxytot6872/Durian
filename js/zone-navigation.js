@@ -125,12 +125,229 @@ class CameraFeedManager {
     constructor() {
         this.zoneData = this.initializeZoneData();
         this.currentZone = localStorage.getItem('selectedZone') || 'A';
+        this.firebaseDashboard = null;
+        this.hlsPlayer = null; // HLS player instance for camera feed
         this.init();
     }
     
     init() {
+        // Wait for Firebase Dashboard Manager to be available
+        this.waitForFirebase();
         this.updateZoneContent();
         this.setupCameraControls();
+    }
+
+    waitForFirebase() {
+        // Check if Firebase Dashboard Manager is available
+        if (window.firebaseDashboard) {
+            this.firebaseDashboard = window.firebaseDashboard;
+            this.setupFirebaseListener();
+        } else {
+            // Retry after a delay
+            setTimeout(() => this.waitForFirebase(), 500);
+        }
+    }
+
+    setupFirebaseListener() {
+        // Listen for device updates from Firebase Dashboard Manager
+        if (this.firebaseDashboard) {
+            // Register callback to be notified when data updates
+            this.firebaseDashboard.onUpdate(() => {
+                this.updateZoneMetricsFromFirebase();
+                this.setupCameraFeed(); // Update camera feed
+                this.generateStatusCards(); // Update status cards
+                this.updateFieldStatusTable(); // Update field status table
+            });
+            
+            // Also set up polling as backup (updates every 5 seconds)
+            setInterval(() => {
+                this.updateZoneMetricsFromFirebase();
+                this.setupCameraFeed(); // Update camera feed
+                this.generateStatusCards(); // Update status cards
+                this.updateFieldStatusTable(); // Update field status table
+            }, 5000);
+            
+            // Initial update
+            this.updateZoneMetricsFromFirebase();
+            this.setupCameraFeed(); // Initial camera feed
+            this.generateStatusCards(); // Initial status cards
+            this.updateFieldStatusTable(); // Initial field status table
+        }
+    }
+
+    updateZoneMetricsFromFirebase() {
+        if (!this.firebaseDashboard) return;
+
+        // Get devices for the current zone
+        const zoneName = `Zone ${this.currentZone}`;
+        const devices = this.firebaseDashboard.getDevicesByZone(zoneName);
+
+        if (devices.length === 0) {
+            console.log(`No devices found for ${zoneName}`);
+            // Show empty state instead of static data
+            const metricsContainer = document.getElementById('zoneMetrics');
+            if (metricsContainer) {
+                const loadingState = document.getElementById('zoneMetricsLoading');
+                if (loadingState) {
+                    loadingState.innerHTML = '<p style="color: #718096;">No devices found for this zone</p>';
+                }
+            }
+            return;
+        }
+
+        // Use the first device's sensor data (or average if multiple)
+        const device = devices[0];
+        
+        // Update zone title and description with device info
+        this.updateZoneHeader(device, zoneName);
+
+        // Setup camera feed if available
+        this.setupCameraFeed();
+
+        if (!device.sensorData) {
+            console.log(`No sensor data for device ${device.name}`);
+            return;
+        }
+
+        // Update zone metrics with real Firebase data
+        this.updateZoneMetricsWithFirebaseData(device.sensorData, device);
+    }
+
+    updateZoneHeader(device, zoneName) {
+        // Update zone title
+        const zoneTitle = document.getElementById('zoneTitle');
+        if (zoneTitle && device) {
+            zoneTitle.textContent = `${zoneName} - ${device.name || 'Sensor'}`;
+        }
+
+        // Update camera title
+        const cameraTitle = document.getElementById('cameraTitle');
+        if (cameraTitle && device) {
+            cameraTitle.textContent = `${zoneName} - ${device.name || 'Sensor'} Live Feed`;
+        }
+    }
+
+    /**
+     * Setup camera feed for the current zone
+     * Looks for Pi devices in the zone and displays their camera feeds
+     */
+    setupCameraFeed() {
+        if (!this.firebaseDashboard) return;
+
+        const zoneName = `Zone ${this.currentZone}`;
+        const devices = this.firebaseDashboard.getDevicesByZone(zoneName);
+
+        // Find camera devices (Pi devices) in this zone
+        const cameraDevices = devices.filter(device => device.type === 'camera_server');
+        
+        if (cameraDevices.length === 0) {
+            // No camera devices in this zone
+            const videoElement = document.getElementById('cameraVideo');
+            const placeholder = document.getElementById('cameraPlaceholder');
+            if (videoElement) videoElement.style.display = 'none';
+            if (placeholder) {
+                placeholder.style.display = 'flex';
+                const statusValue = placeholder.querySelector('.stat-value.live');
+                if (statusValue) statusValue.textContent = 'No Camera';
+            }
+            return;
+        }
+
+        // Use first camera device
+        const cameraDevice = cameraDevices[0];
+        const cameraFeeds = cameraDevice.cameraFeeds || {};
+        const feedNames = Object.keys(cameraFeeds);
+        
+        if (feedNames.length === 0) {
+            // Device exists but no feeds yet
+            const videoElement = document.getElementById('cameraVideo');
+            const placeholder = document.getElementById('cameraPlaceholder');
+            if (videoElement) videoElement.style.display = 'none';
+            if (placeholder) {
+                placeholder.style.display = 'flex';
+                const statusValue = placeholder.querySelector('.stat-value.live');
+                if (statusValue) statusValue.textContent = 'No Feeds';
+            }
+            return;
+        }
+
+        // Get first feed URL
+        const firstFeedUrl = cameraFeeds[feedNames[0]];
+        this.loadCameraFeed(firstFeedUrl);
+    }
+
+    /**
+     * Load and play HLS camera feed
+     */
+    loadCameraFeed(feedUrl) {
+        const videoElement = document.getElementById('cameraVideo');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        
+        if (!videoElement || !feedUrl) return;
+
+        // Cleanup existing HLS player
+        if (this.hlsPlayer) {
+            this.hlsPlayer.destroy();
+            this.hlsPlayer = null;
+        }
+
+        // Check if HLS is supported
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 90
+            });
+
+            hls.loadSource(feedUrl);
+            hls.attachMedia(videoElement);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                console.log('✅ HLS manifest parsed');
+                videoElement.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+                videoElement.play().catch(err => {
+                    console.warn('⚠️ Autoplay prevented:', err);
+                });
+            });
+
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    console.error('❌ HLS error:', data);
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            hls.destroy();
+                            if (placeholder) {
+                                placeholder.style.display = 'flex';
+                                videoElement.style.display = 'none';
+                            }
+                            break;
+                    }
+                }
+            });
+
+            this.hlsPlayer = hls;
+        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS support (Safari)
+            videoElement.src = feedUrl;
+            videoElement.style.display = 'block';
+            if (placeholder) placeholder.style.display = 'none';
+            videoElement.play().catch(err => {
+                console.warn('⚠️ Autoplay prevented:', err);
+            });
+        } else {
+            console.error('❌ HLS not supported');
+            if (placeholder) {
+                placeholder.style.display = 'flex';
+                videoElement.style.display = 'none';
+            }
+        }
     }
     
     initializeZoneData() {
@@ -185,11 +402,11 @@ class CameraFeedManager {
     
     updateZoneContent() {
         const selectedZone = localStorage.getItem('selectedZone') || 'A';
-        const selectedZoneName = localStorage.getItem('selectedZoneName') || 'North Field';
+        const selectedZoneName = localStorage.getItem('selectedZoneName') || 'Loading...';
         
         console.log('Updating zone content for:', selectedZone, selectedZoneName);
         
-        // Update titles
+        // Update titles (will be updated with real data when Firebase loads)
         const zoneTitle = document.getElementById('zoneTitle');
         const cameraTitle = document.getElementById('cameraTitle');
         const cameraDescription = document.getElementById('cameraDescription');
@@ -202,21 +419,94 @@ class CameraFeedManager {
             cameraTitle.textContent = `Zone ${selectedZone} - ${selectedZoneName} Live Feed`;
         }
         
-        const data = this.zoneData.get(selectedZone);
-        if (data && cameraDescription) {
-            cameraDescription.textContent = data.description;
+        if (cameraDescription) {
+            cameraDescription.textContent = 'Loading zone data...';
         }
         
-        // Update zone metrics
+        // Update zone metrics (will use Firebase data when available)
         this.updateZoneMetrics(selectedZone);
     }
     
     updateZoneMetrics(zone) {
+        // First try to get data from Firebase
+        if (this.firebaseDashboard) {
+            this.updateZoneMetricsFromFirebase();
+            return;
+        }
+
+        // Show loading state if Firebase not available yet
         const metricsContainer = document.getElementById('zoneMetrics');
         if (!metricsContainer) return;
         
-        const data = this.zoneData.get(zone);
-        if (!data) return;
+        // Keep loading state visible until Firebase is ready
+        const loadingState = document.getElementById('zoneMetricsLoading');
+        if (loadingState && !this.firebaseDashboard) {
+            // Loading state already shown in HTML, just return
+            return;
+        }
+    }
+
+    updateZoneMetricsWithFirebaseData(sensorData, device) {
+        const metricsContainer = document.getElementById('zoneMetrics');
+        if (!metricsContainer) return;
+
+        // Remove loading state
+        const loadingState = document.getElementById('zoneMetricsLoading');
+        if (loadingState) {
+            loadingState.remove();
+        }
+
+        // Determine zone status based on moisture
+        const moisture = sensorData.moisture || 0;
+        let status = 'healthy';
+        if (moisture < 30) {
+            status = 'critical';
+        } else if (moisture < 50) {
+            status = 'warning';
+        }
+        
+        // Update zone status badge
+        const statusBadge = document.getElementById('zoneStatusBadge');
+        if (statusBadge) {
+            statusBadge.textContent = status === 'healthy' ? 'Active' : status === 'warning' ? 'Warning' : 'Critical';
+            statusBadge.className = `zone-badge ${status}`;
+        }
+        
+        metricsContainer.innerHTML = '';
+        
+        // Format timestamp
+        const timestamp = sensorData.timestamp || Date.now();
+        const lastUpdate = this.formatTimestamp(timestamp);
+        
+        // Define metrics with new sensor data fields
+        const metrics = [
+            { label: 'Soil Moisture', value: `${Math.round(sensorData.moisture || 0)}%`, class: 'moisture', priority: 1 },
+            { label: 'Temperature', value: `${Math.round(sensorData.temperature || 0)}°C`, class: 'temperature', priority: 2 },
+            { label: 'Electrical Conductivity', value: `${sensorData.ec || 0} µS/cm`, class: 'ec', priority: 3 },
+            { label: 'pH Level', value: (sensorData.ph || 0).toFixed(1), class: 'ph', priority: 4 },
+            { label: 'Nitrogen (N)', value: `${sensorData.n || 0} mg/kg`, class: 'nitrogen', priority: 5 },
+            { label: 'Phosphorus (P)', value: `${sensorData.p || 0} mg/kg`, class: 'phosphorus', priority: 6 },
+            { label: 'Potassium (K)', value: `${sensorData.k || 0} mg/kg`, class: 'potassium', priority: 7 },
+            { label: 'Last Update', value: lastUpdate, class: 'timestamp', priority: 8 }
+        ];
+        
+        // Sort by priority and render
+        metrics.sort((a, b) => a.priority - b.priority);
+        
+        metrics.forEach(metric => {
+            const metricDiv = document.createElement('div');
+            metricDiv.className = `zone-metric ${metric.class || ''}`.trim();
+            metricDiv.innerHTML = `
+                <span class="metric-label">${metric.label}</span>
+                <span class="metric-value">${metric.value}</span>
+            `;
+            metricsContainer.appendChild(metricDiv);
+        });
+    }
+
+    updateZoneMetricsWithStaticData(data) {
+        const metricsContainer = document.getElementById('zoneMetrics');
+        if (!metricsContainer) return;
         
         // Determine zone status based on metrics
         const moisture = parseInt(data.metrics['Soil Moisture']) || 0;
@@ -263,6 +553,34 @@ class CameraFeedManager {
             metricsContainer.appendChild(metricDiv);
         });
     }
+
+    formatTimestamp(timestamp) {
+        if (!timestamp) return 'Never';
+        
+        // If timestamp is in milliseconds (from ESP32 millis())
+        // We'll treat it as relative time since boot
+        const now = Date.now();
+        const diff = now - timestamp;
+        
+        // If timestamp seems to be from ESP32 (millis since boot), show relative time
+        if (diff > 86400000) { // More than 24 hours difference
+            // Likely ESP32 millis() - show as "X seconds ago" based on polling
+            return 'Just now';
+        }
+        
+        // Otherwise format as time ago
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        
+        if (hours > 0) {
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        } else if (minutes > 0) {
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        } else {
+            return 'Just now';
+        }
+    }
     
     setupCameraControls() {
         // Back button functionality
@@ -295,8 +613,13 @@ class CameraFeedManager {
         // Setup valve controls
         this.setupValveControls();
         
-        // Setup status dashboard
+        // Setup status dashboard (will use Firebase data if available)
         this.setupStatusDashboard();
+        
+        // Update field status table if Firebase is available
+        if (this.firebaseDashboard) {
+            this.updateFieldStatusTable();
+        }
     }
     
     setupValveControls() {
@@ -381,13 +704,186 @@ class CameraFeedManager {
         const statusCardsGrid = document.getElementById('statusCardsGrid');
         if (!statusCardsGrid) return;
         
-        const statusData = this.getZoneStatusData();
+        // Try to get real data from Firebase first
+        if (this.firebaseDashboard) {
+            this.generateStatusCardsFromFirebase();
+        } else {
+            // Keep loading state visible until Firebase is ready
+            const loadingState = document.getElementById('statusCardsLoading');
+            if (loadingState) {
+                // Loading state already shown in HTML, just return
+                return;
+            }
+        }
+    }
+
+    generateStatusCardsFromFirebase() {
+        const statusCardsGrid = document.getElementById('statusCardsGrid');
+        if (!statusCardsGrid || !this.firebaseDashboard) return;
+
+        // Remove loading state
+        const loadingState = document.getElementById('statusCardsLoading');
+        if (loadingState) {
+            loadingState.remove();
+        }
+
+        const selectedZone = localStorage.getItem('selectedZone') || 'A';
+        const zoneName = `Zone ${selectedZone}`;
+        const devices = this.firebaseDashboard.getDevicesByZone(zoneName);
+
         statusCardsGrid.innerHTML = '';
+
+        if (devices.length === 0) {
+            statusCardsGrid.innerHTML = '<p style="padding: 2rem; text-align: center; color: #718096;">No devices found for this zone</p>';
+            return;
+        }
+
+        // Get sensor data from first device (or aggregate)
+        const device = devices[0];
+        if (!device || !device.sensorData) {
+            statusCardsGrid.innerHTML = '<p style="padding: 2rem; text-align: center; color: #718096;">No sensor data available</p>';
+            return;
+        }
+
+        const sensorData = device.sensorData;
+        const statusCards = [];
+
+        // Watering Status based on moisture
+        const moisture = sensorData.moisture || 0;
+        let wateringStatus = 'healthy';
+        let wateringContent = 'Optimal moisture levels maintained.';
+        if (moisture < 30) {
+            wateringStatus = 'critical';
+            wateringContent = 'Low moisture levels detected. Immediate irrigation required.';
+        } else if (moisture < 50) {
+            wateringStatus = 'warning';
+            wateringContent = 'Moisture levels below optimal. Consider irrigation soon.';
+        }
+
+        statusCards.push({
+            type: 'watering',
+            title: 'Watering Status',
+            status: wateringStatus,
+            content: wateringContent,
+            time: this.formatTimestamp(sensorData.timestamp)
+        });
+
+        // Fertilizer Status based on NPK levels
+        const n = sensorData.n || 0;
+        const p = sensorData.p || 0;
+        const k = sensorData.k || 0;
+        let fertilizerStatus = 'healthy';
+        let fertilizerContent = 'Nutrient levels balanced.';
         
-        statusData.forEach(status => {
+        if (n < 10 || p < 5 || k < 5) {
+            fertilizerStatus = 'warning';
+            fertilizerContent = `Nutrient levels: N=${n}, P=${p}, K=${k} mg/kg. Consider fertilizer application.`;
+        }
+
+        statusCards.push({
+            type: 'fertilizer',
+            title: 'Fertilizer Status',
+            status: fertilizerStatus,
+            content: fertilizerContent,
+            time: this.formatTimestamp(sensorData.timestamp)
+        });
+
+        // Soil Health based on pH and EC
+        const ph = sensorData.ph || 0;
+        const ec = sensorData.ec || 0;
+        let soilStatus = 'healthy';
+        let soilContent = 'Soil conditions optimal.';
+        
+        if (ph < 5.5 || ph > 7.5) {
+            soilStatus = 'warning';
+            soilContent = `pH level ${ph} is outside optimal range (5.5-7.5).`;
+        } else if (ec > 2000) {
+            soilStatus = 'warning';
+            soilContent = `High electrical conductivity (${ec} µS/cm) detected.`;
+        }
+
+        statusCards.push({
+            type: 'soil',
+            title: 'Soil Health',
+            status: soilStatus,
+            content: soilContent,
+            time: this.formatTimestamp(sensorData.timestamp)
+        });
+
+        // Render status cards
+        statusCards.forEach(status => {
             const card = this.createStatusCard(status);
             statusCardsGrid.appendChild(card);
         });
+
+        // Also update field status table
+        this.updateFieldStatusTable();
+    }
+
+    updateFieldStatusTable() {
+        const tableBody = document.getElementById('fieldStatusTableBody');
+        if (!tableBody || !this.firebaseDashboard) return;
+
+        // Remove loading state
+        const loadingRow = document.getElementById('fieldStatusLoading');
+        if (loadingRow) {
+            loadingRow.remove();
+        }
+
+        const allDevices = this.firebaseDashboard.getDevices();
+        
+        if (allDevices.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: #718096;">No devices found</td></tr>';
+            return;
+        }
+
+        // Group devices by zone and create table rows
+        const devicesByZone = new Map();
+        for (const device of allDevices) {
+            const zone = device.zone || 'Unknown';
+            if (!devicesByZone.has(zone)) {
+                devicesByZone.set(zone, []);
+            }
+            devicesByZone.get(zone).push(device);
+        }
+
+        tableBody.innerHTML = '';
+
+        // Create a row for each zone/device
+        for (const [zoneName, devices] of devicesByZone.entries()) {
+            const device = devices[0]; // Use first device for zone info
+            const sensorData = device.sensorData;
+            
+            // Determine status based on moisture
+            const moisture = sensorData?.moisture || 0;
+            let status = 'completed';
+            let statusText = 'Healthy';
+            if (moisture < 30) {
+                status = 'critical';
+                statusText = 'Critical';
+            } else if (moisture < 50) {
+                status = 'pending';
+                statusText = 'Warning';
+            }
+
+            // Format last update
+            const lastUpdate = sensorData?.timestamp 
+                ? this.formatTimestamp(sensorData.timestamp)
+                : 'No data';
+
+            // Extract zone letter for field ID
+            const zoneLetter = zoneName.replace('Zone ', '').trim();
+            const fieldId = `Field ${zoneLetter}-${device.deviceId.slice(-4)}`; // Use last 4 chars of device ID
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${fieldId}</td>
+                <td>${devices.length} device${devices.length > 1 ? 's' : ''}</td>
+                <td><span class="status-badge ${status}">${statusText}</span></td>
+                <td>${lastUpdate}</td>
+            `;
+            tableBody.appendChild(row);
+        }
     }
     
     getZoneStatusData() {

@@ -197,23 +197,31 @@ class FarmDashboard {
     }
 
     setupRealTimeUpdates() {
-        // Simulate real-time updates every 30 seconds
-        setInterval(() => {
-            this.updateFarmMetrics();
-        }, 30000);
+        // Real-time updates are now handled by Firebase Dashboard Manager
+        // This method is kept for compatibility but Firebase handles updates
+        console.log('📊 Real-time updates handled by Firebase Dashboard Manager');
+        
+        // Check if Firebase Dashboard Manager is available
+        if (window.firebaseDashboard) {
+            console.log('✅ Firebase Dashboard Manager connected');
+        } else {
+            console.log('⏳ Waiting for Firebase Dashboard Manager...');
+            // Retry after a delay
+            setTimeout(() => {
+                if (window.firebaseDashboard) {
+                    console.log('✅ Firebase Dashboard Manager now available');
+                }
+            }, 2000);
+        }
     }
 
     updateFarmMetrics() {
-        // Update stat cards with new values
-        const metrics = {
-            soilMoisture: Math.floor(Math.random() * 20) + 60,
-            temperature: Math.floor(Math.random() * 8) + 25,
-            humidity: Math.floor(Math.random() * 15) + 70,
-            plantHealth: Math.floor(Math.random() * 10) + 85
-        };
-
-        // Update the display (simplified for demo)
-        console.log('Updating farm metrics:', metrics);
+        // Metrics are now updated by Firebase Dashboard Manager
+        // This method is kept for compatibility
+        if (window.firebaseDashboard) {
+            const devices = window.firebaseDashboard.getDevices();
+            console.log('📊 Current devices:', devices.length);
+        }
     }
 
     // Method to update weather chart based on period selection
