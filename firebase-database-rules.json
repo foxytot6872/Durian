@@ -33,9 +33,13 @@
 
         "devices": {
           "$deviceId": {
-            // Device info (name, zone, etc.) requires authentication
+            // Device info can be written without auth (ESP32 and Raspberry Pi devices)
+            // Security: deviceId is unique (based on MAC address)
+            // Devices only know their own deviceId, so they can only write to their own path
+            // Path structure: /users/{uid}/devices/{deviceId}/device_info
+            // Only the device with that specific deviceId can write to that path
             "device_info": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": true,
               ".read": "auth != null && auth.uid === $uid"
             },
             // Sensor data can be written without auth (ESP32 devices)

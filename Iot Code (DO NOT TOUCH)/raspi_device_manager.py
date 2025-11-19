@@ -159,8 +159,28 @@ def firebase_put(path: str, data: Dict[str, Any]) -> bool:
             logger.info(f"Firebase PUT {path}: Success")
             return True
         
-        logger.error(f"Firebase PUT {path}: Failed with status {response.status_code}")
-        logger.error(f"Response: {response.text}")
+        # Detailed error handling
+        error_msg = f"Firebase PUT {path}: Failed with status {response.status_code}"
+        
+        if response.status_code == 401:
+            error_msg += " - Authentication required (check Firebase security rules)"
+        elif response.status_code == 403:
+            error_msg += " - Permission denied (check Firebase security rules allow unauthenticated writes)"
+        elif response.status_code == 404:
+            error_msg += " - Path not found (check path structure)"
+        else:
+            error_msg += f" - {response.text}"
+        
+        logger.error(error_msg)
+        
+        # Try to parse error response
+        try:
+            error_data = response.json()
+            if isinstance(error_data, dict) and 'error' in error_data:
+                logger.error(f"Firebase error: {error_data['error']}")
+        except:
+            logger.error(f"Response body: {response.text[:200]}")
+        
         return False
         
     except requests.exceptions.RequestException as e:
@@ -299,6 +319,8 @@ def main():
         logger.error("No camera configuration found. Exiting.")
         return
     
+    logger.info(f"📹 Camera configuration loaded: {len(camera_config)} camera(s) - {list(camera_config.keys())}")
+    
     # Wait until device is claimed
     owner_uid = wait_until_claimed(device_id)
     if not owner_uid:
@@ -317,18 +339,35 @@ def main():
     
     # Generate HLS URLs
     hls_urls = generate_hls_urls(local_ip, camera_config)
+    logger.info(f"📹 Generated {len(hls_urls)} HLS URL(s): {list(hls_urls.keys())}")
+    
+    if not hls_urls:
+        logger.warning("⚠️  No HLS URLs generated! Check camera_config.json has valid camera entries.")
     
     # Initial update: device_info and camera_feeds
+    logger.info("=" * 60)
     logger.info("Publishing initial device information...")
+    logger.info("=" * 60)
+    logger.info(f"📝 Writing to: /users/{owner_uid}/devices/{device_id}/device_info")
     if update_device_info(device_id, owner_uid, device_name, zone, local_ip):
         logger.info("✅ Device info updated successfully")
     else:
         logger.error("❌ Failed to update device info")
+        logger.error("⚠️  Make sure Firebase security rules allow unauthenticated writes to device_info")
+        logger.error("⚠️  The rule should be: 'device_info': { '.write': true }")
     
-    if publish_camera_feeds(device_id, owner_uid, hls_urls):
-        logger.info("✅ Camera feeds published successfully")
+    if hls_urls:
+        logger.info(f"📹 Writing to: /users/{owner_uid}/devices/{device_id}/camera_feeds")
+        logger.info(f"📹 Publishing {len(hls_urls)} camera feed(s): {list(hls_urls.keys())}")
+        if publish_camera_feeds(device_id, owner_uid, hls_urls):
+            logger.info("✅ Camera feeds published successfully")
+            logger.info(f"📹 Camera feeds available at: {list(hls_urls.values())}")
+        else:
+            logger.error("❌ Failed to publish camera feeds")
+            logger.error("⚠️  Make sure Firebase security rules allow unauthenticated writes to camera_feeds")
     else:
-        logger.error("❌ Failed to publish camera feeds")
+        logger.warning("⚠️  Skipping camera feed publishing - no HLS URLs generated")
+        logger.warning("⚠️  Check camera_config.json and ensure cameras are configured")
     
     # Continuous update loop
     logger.info("Entering continuous update loop...")

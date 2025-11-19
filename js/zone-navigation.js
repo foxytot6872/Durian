@@ -127,6 +127,8 @@ class CameraFeedManager {
         this.currentZone = localStorage.getItem('selectedZone') || 'A';
         this.firebaseDashboard = null;
         this.hlsPlayer = null; // HLS player instance for camera feed
+        this.currentFeedUrl = null; // Track current feed URL to prevent reloading
+        this.isLoadingFeed = false; // Prevent multiple simultaneous loads
         this.init();
     }
     
@@ -233,6 +235,9 @@ class CameraFeedManager {
      */
     setupCameraFeed() {
         if (!this.firebaseDashboard) return;
+        
+        // Prevent multiple simultaneous loads
+        if (this.isLoadingFeed) return;
 
         const zoneName = `Zone ${this.currentZone}`;
         const devices = this.firebaseDashboard.getDevicesByZone(zoneName);
@@ -250,6 +255,8 @@ class CameraFeedManager {
                 const statusValue = placeholder.querySelector('.stat-value.live');
                 if (statusValue) statusValue.textContent = 'No Camera';
             }
+            // Clear current feed URL since no camera available
+            this.currentFeedUrl = null;
             return;
         }
 
@@ -268,11 +275,24 @@ class CameraFeedManager {
                 const statusValue = placeholder.querySelector('.stat-value.live');
                 if (statusValue) statusValue.textContent = 'No Feeds';
             }
+            // Clear current feed URL since no feeds available
+            this.currentFeedUrl = null;
             return;
         }
 
         // Get first feed URL
         const firstFeedUrl = cameraFeeds[feedNames[0]];
+        console.log('📹 Camera feed URL:', firstFeedUrl);
+        console.log('📹 Camera device:', cameraDevice.name, '| Zone:', zoneName);
+        console.log('📹 Available feeds:', feedNames);
+        
+        // Only load if URL has changed
+        if (firstFeedUrl === this.currentFeedUrl && this.hlsPlayer) {
+            // Same feed already playing, don't reload
+            console.log('✅ Same feed already playing, skipping reload');
+            return;
+        }
+        
         this.loadCameraFeed(firstFeedUrl);
     }
 
@@ -283,11 +303,38 @@ class CameraFeedManager {
         const videoElement = document.getElementById('cameraVideo');
         const placeholder = document.getElementById('cameraPlaceholder');
         
-        if (!videoElement || !feedUrl) return;
+        if (!videoElement || !feedUrl) {
+            console.warn('⚠️ Cannot load camera feed: missing video element or feed URL');
+            return;
+        }
+        
+        console.log('🎥 Loading camera feed:', feedUrl);
+        console.log('🎥 Current feed URL:', this.currentFeedUrl);
+        console.log('🎥 Is loading:', this.isLoadingFeed);
+        
+        // Prevent multiple simultaneous loads
+        if (this.isLoadingFeed) {
+            console.log('⏳ Camera feed load already in progress, skipping...');
+            return;
+        }
+        
+        // If same URL is already playing, don't reload
+        if (feedUrl === this.currentFeedUrl && this.hlsPlayer) {
+            console.log('✅ Same camera feed already playing, skipping reload');
+            return;
+        }
+
+        this.isLoadingFeed = true;
+        this.currentFeedUrl = feedUrl;
+        console.log('🔄 Starting new camera feed load:', feedUrl);
 
         // Cleanup existing HLS player
         if (this.hlsPlayer) {
-            this.hlsPlayer.destroy();
+            try {
+                this.hlsPlayer.destroy();
+            } catch (e) {
+                console.warn('Warning cleaning up HLS player:', e);
+            }
             this.hlsPlayer = null;
         }
 
@@ -296,33 +343,43 @@ class CameraFeedManager {
             const hls = new Hls({
                 enableWorker: true,
                 lowLatencyMode: true,
-                backBufferLength: 90
+                backBufferLength: 90,
+                maxBufferLength: 30, // Reduce buffer to prevent looping
+                maxMaxBufferLength: 60
             });
 
             hls.loadSource(feedUrl);
             hls.attachMedia(videoElement);
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                console.log('✅ HLS manifest parsed');
+                console.log('✅ HLS manifest parsed for:', feedUrl);
+                console.log('✅ Video element ready, attempting playback');
+                this.isLoadingFeed = false;
                 videoElement.style.display = 'block';
                 if (placeholder) placeholder.style.display = 'none';
                 videoElement.play().catch(err => {
-                    console.warn('⚠️ Autoplay prevented:', err);
+                    // Autoplay prevention is normal, user can click to play
+                    console.log('ℹ️ Autoplay prevented (user interaction required):', err.message);
                 });
             });
 
             hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
                     console.error('❌ HLS error:', data);
+                    this.isLoadingFeed = false;
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log('🔄 Retrying network error...');
                             hls.startLoad();
                             break;
                         case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log('🔄 Recovering media error...');
                             hls.recoverMediaError();
                             break;
                         default:
                             hls.destroy();
+                            this.hlsPlayer = null;
+                            this.currentFeedUrl = null;
                             if (placeholder) {
                                 placeholder.style.display = 'flex';
                                 videoElement.style.display = 'none';
@@ -333,16 +390,19 @@ class CameraFeedManager {
             });
 
             this.hlsPlayer = hls;
+            this.isLoadingFeed = false;
         } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
             // Native HLS support (Safari)
+            this.isLoadingFeed = false;
             videoElement.src = feedUrl;
             videoElement.style.display = 'block';
             if (placeholder) placeholder.style.display = 'none';
             videoElement.play().catch(err => {
-                console.warn('⚠️ Autoplay prevented:', err);
+                console.log('ℹ️ Autoplay prevented (user interaction required)');
             });
         } else {
             console.error('❌ HLS not supported');
+            this.isLoadingFeed = false;
             if (placeholder) {
                 placeholder.style.display = 'flex';
                 videoElement.style.display = 'none';
