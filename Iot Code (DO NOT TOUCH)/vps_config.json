@@ -1,0 +1,13 @@
+{
+  "vps_host": "161.118.209.162",
+   "vps_user": "hlsuploader",
+  "vps_port": 22,
+  "vps_hls_path": "/var/www/html/hls",
+  "vps_public_url": "http://161.118.209.162",
+  "ssh_key_path": "/home/pi/.ssh/vps_hls_key",
+  "upload_interval": 1
+}
+
+
+
+

@@ -243,14 +243,42 @@ def load_camera_config() -> Dict[str, str]:
         return {}
 
 
+def load_vps_config() -> Optional[Dict[str, Any]]:
+    """Load VPS configuration if available."""
+    vps_config_file = Path(__file__).parent / "vps_config.json"
+    if not vps_config_file.exists():
+        return None
+    
+    try:
+        with open(vps_config_file, 'r') as f:
+            config = json.load(f)
+        logger.info(f"Loaded VPS config: {config.get('vps_public_url', 'Not configured')}")
+        return config
+    except Exception as e:
+        logger.warning(f"Could not load VPS config: {e}")
+        return None
+
+
 def generate_hls_urls(local_ip: str, camera_config: Dict[str, str]) -> Dict[str, str]:
     """
     Generate HLS URLs for each camera.
-    Assumes HLS streams are served at http://<ip>/hls/<camera_name>.m3u8
+    Uses VPS public URL if configured, otherwise falls back to local IP.
     """
     hls_urls = {}
+    
+    # Check if VPS is configured
+    vps_config = load_vps_config()
+    if vps_config and vps_config.get('vps_public_url'):
+        # Use VPS public URL
+        base_url = vps_config['vps_public_url'].rstrip('/')
+        logger.info(f"Using VPS public URL: {base_url}")
+    else:
+        # Fallback to local IP
+        base_url = f"http://{local_ip}"
+        logger.info(f"Using local IP (VPS not configured): {base_url}")
+    
     for cam_name in camera_config.keys():
-        hls_url = f"http://{local_ip}/hls/{cam_name}.m3u8"
+        hls_url = f"{base_url}/hls/{cam_name}.m3u8"
         hls_urls[cam_name] = hls_url
         logger.info(f"Generated HLS URL for {cam_name}: {hls_url}")
     return hls_urls
@@ -260,13 +288,26 @@ def update_device_info(device_id: str, owner_uid: str, device_name: str, zone: s
     """
     Update device_info in Firebase.
     Path: /users/<owner_uid>/devices/<device_id>/device_info/
+    Uses VPS hostname if configured, otherwise uses local IP.
     """
+    # Check if VPS is configured
+    vps_config = load_vps_config()
+    if vps_config and vps_config.get('vps_public_url'):
+        # Extract hostname from VPS URL (remove http:// or https://)
+        vps_url = vps_config['vps_public_url']
+        ip_address = vps_url.replace('http://', '').replace('https://', '').split('/')[0]
+        logger.info(f"Using VPS hostname for ip_address: {ip_address}")
+    else:
+        # Fallback to local IP
+        ip_address = local_ip
+        logger.info(f"Using local IP for ip_address: {ip_address}")
+    
     device_info = {
         "device_id": device_id,
         "type": "camera_server",
         "name": device_name,
         "zone": zone,
-        "ip_address": local_ip,
+        "ip_address": ip_address,
         "firmware_version": "1.0.0",
         "last_online": int(time.time() * 1000)  # milliseconds timestamp
     }
@@ -378,8 +419,11 @@ def main():
             time.sleep(UPDATE_INTERVAL)
             
             # Update device_info (keep last_online current)
-            logger.debug("Updating device_info...")
-            update_device_info(device_id, owner_uid, device_name, zone, local_ip)
+            logger.info("Updating device_info...")
+            if update_device_info(device_id, owner_uid, device_name, zone, local_ip):
+                logger.info("✅ Device info updated (last_online timestamp refreshed)")
+            else:
+                logger.warning("⚠️ Failed to update device_info")
             
             # Re-check device info from registry (in case user updated name/zone)
             updated_info = get_device_info_from_registry(device_id)

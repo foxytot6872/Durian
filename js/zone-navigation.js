@@ -351,16 +351,32 @@ class CameraFeedManager {
             hls.loadSource(feedUrl);
             hls.attachMedia(videoElement);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
                 console.log('✅ HLS manifest parsed for:', feedUrl);
+                console.log('✅ Available levels:', data.levels);
                 console.log('✅ Video element ready, attempting playback');
                 this.isLoadingFeed = false;
                 videoElement.style.display = 'block';
                 if (placeholder) placeholder.style.display = 'none';
-                videoElement.play().catch(err => {
-                    // Autoplay prevention is normal, user can click to play
-                    console.log('ℹ️ Autoplay prevented (user interaction required):', err.message);
-                });
+                
+                // Try to play
+                const playPromise = videoElement.play();
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('✅ Video playback started');
+                        })
+                        .catch(err => {
+                            // Autoplay prevention is normal, user can click to play
+                            console.log('ℹ️ Autoplay prevented (user interaction required):', err.message);
+                            // Show play button or message to user
+                            if (placeholder) {
+                                placeholder.style.display = 'block';
+                                placeholder.innerHTML = '<p>Click to play video</p>';
+                                placeholder.onclick = () => videoElement.play();
+                            }
+                        });
+                }
             });
 
             hls.on(Hls.Events.ERROR, (event, data) => {
@@ -380,12 +396,11 @@ class CameraFeedManager {
                             hls.destroy();
                             this.hlsPlayer = null;
                             this.currentFeedUrl = null;
-                            if (placeholder) {
-                                placeholder.style.display = 'flex';
-                                videoElement.style.display = 'none';
-                            }
                             break;
                     }
+                } else {
+                    // Non-fatal errors (warnings)
+                    console.warn('⚠️ HLS warning:', data);
                 }
             });
 

@@ -1,5 +1,4 @@
 {
-  "cam1": "rtsp://user:password@192.168.1.100:554/stream1",
-  "cam2": "rtsp://user:password@192.168.1.100:554/stream2"
+  "cam1": "rtsp://Duriandashboard:Durian12345@192.168.1.100:554/stream1"
 }
 
