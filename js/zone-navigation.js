@@ -297,6 +297,21 @@ class CameraFeedManager {
     }
 
     /**
+     * Convert HTTP URL to HTTPS to avoid mixed content errors
+     * Note: This requires the server to support HTTPS
+     */
+    convertToHttps(url) {
+        if (!url) return url;
+        // If URL starts with http://, convert to https://
+        if (url.startsWith('http://')) {
+            const httpsUrl = url.replace('http://', 'https://');
+            console.log('🔄 Converting HTTP to HTTPS:', url, '→', httpsUrl);
+            return httpsUrl;
+        }
+        return url;
+    }
+
+    /**
      * Load and play HLS camera feed
      */
     loadCameraFeed(feedUrl) {
@@ -306,6 +321,14 @@ class CameraFeedManager {
         if (!videoElement || !feedUrl) {
             console.warn('⚠️ Cannot load camera feed: missing video element or feed URL');
             return;
+        }
+        
+        // Convert HTTP to HTTPS if page is loaded over HTTPS (to avoid mixed content errors)
+        // Note: This requires the VPS server to support HTTPS
+        if (window.location.protocol === 'https:' && feedUrl.startsWith('http://')) {
+            feedUrl = this.convertToHttps(feedUrl);
+            console.warn('⚠️ Mixed content detected: HTTP URL on HTTPS page. Converted to HTTPS.');
+            console.warn('⚠️ Make sure your VPS server (161.118.209.162) supports HTTPS, or set up SSL certificate.');
         }
         
         console.log('🎥 Loading camera feed:', feedUrl);
@@ -383,6 +406,30 @@ class CameraFeedManager {
                 if (data.fatal) {
                     console.error('❌ HLS error:', data);
                     this.isLoadingFeed = false;
+                    
+                    // Check for mixed content or CORS errors
+                    if (data.details && (
+                        data.details.includes('Mixed Content') || 
+                        data.details.includes('CORS') ||
+                        data.message && data.message.includes('Mixed Content')
+                    )) {
+                        console.error('❌ Mixed Content Error: The VPS server needs to support HTTPS.');
+                        console.error('❌ Please configure SSL certificate on your VPS server (161.118.209.162)');
+                        if (placeholder) {
+                            placeholder.style.display = 'flex';
+                            placeholder.innerHTML = `
+                                <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: #f59e0b; margin-bottom: 1rem;"></i>
+                                <h3>Mixed Content Error</h3>
+                                <p>The camera server must use HTTPS. Please configure SSL on your VPS server.</p>
+                                <p style="font-size: 0.9rem; color: #64748b;">Server: 161.118.209.162</p>
+                            `;
+                        }
+                        hls.destroy();
+                        this.hlsPlayer = null;
+                        this.currentFeedUrl = null;
+                        return;
+                    }
+                    
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
                             console.log('🔄 Retrying network error...');
@@ -396,6 +443,14 @@ class CameraFeedManager {
                             hls.destroy();
                             this.hlsPlayer = null;
                             this.currentFeedUrl = null;
+                            if (placeholder) {
+                                placeholder.style.display = 'flex';
+                                placeholder.innerHTML = `
+                                    <i class="fas fa-video-slash" style="font-size: 4rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                                    <h3>Camera Feed Error</h3>
+                                    <p>Unable to load camera feed. Please check the server connection.</p>
+                                `;
+                            }
                             break;
                     }
                 } else {

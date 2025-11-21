@@ -106,3 +106,16 @@ Thumbs.db
 *.bak
 *.backup
 *.old
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# IoT Code directory - excluded from Firebase deployment (see firebase.json)
+# Files are tracked in git but NOT deployed to Firebase Hosting
+
+# Keep firebase.json and .firebaserc (needed for deployment)
+!firebase.json
+!.firebaserc

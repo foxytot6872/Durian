@@ -410,6 +410,79 @@ class FirebaseDashboardManager {
     }
 
     /**
+     * Remove device from user (hard delete)
+     * Removes from both device_registry and user's devices
+     * Device will become orphan and unclaimed
+     */
+    async removeDevice(deviceId) {
+        if (!this.currentUser || !this.idToken) {
+            throw new Error('Authentication required');
+        }
+
+        try {
+            // Cleanup listeners for this device
+            const cleanup = this.sensorListeners.get(deviceId);
+            if (cleanup) {
+                cleanup();
+                this.sensorListeners.delete(deviceId);
+            }
+
+            // Remove from device_registry
+            const registryUrl = `${DB_URL}/device_registry/${deviceId}.json?auth=${this.idToken}`;
+            const registryResponse = await fetch(registryUrl, {
+                method: 'DELETE'
+            });
+
+            if (registryResponse.status === 401 || registryResponse.status === 403) {
+                // Token expired, refresh and retry
+                this.idToken = await this.currentUser.getIdToken(true);
+                const retryRegistryResponse = await fetch(`${DB_URL}/device_registry/${deviceId}.json?auth=${this.idToken}`, {
+                    method: 'DELETE'
+                });
+                if (!retryRegistryResponse.ok && retryRegistryResponse.status !== 404) {
+                    throw new Error(`Failed to remove device from registry: HTTP ${retryRegistryResponse.status}`);
+                }
+            } else if (!registryResponse.ok && registryResponse.status !== 404) {
+                throw new Error(`Failed to remove device from registry: HTTP ${registryResponse.status}`);
+            }
+
+            // Remove from user's devices
+            const userDeviceUrl = `${DB_URL}/users/${this.currentUser.uid}/devices/${deviceId}.json?auth=${this.idToken}`;
+            const userDeviceResponse = await fetch(userDeviceUrl, {
+                method: 'DELETE'
+            });
+
+            if (userDeviceResponse.status === 401 || userDeviceResponse.status === 403) {
+                // Token expired, refresh and retry
+                this.idToken = await this.currentUser.getIdToken(true);
+                const retryUserDeviceResponse = await fetch(`${DB_URL}/users/${this.currentUser.uid}/devices/${deviceId}.json?auth=${this.idToken}`, {
+                    method: 'DELETE'
+                });
+                if (!retryUserDeviceResponse.ok && retryUserDeviceResponse.status !== 404) {
+                    throw new Error(`Failed to remove device from user: HTTP ${retryUserDeviceResponse.status}`);
+                }
+            } else if (!userDeviceResponse.ok && userDeviceResponse.status !== 404) {
+                throw new Error(`Failed to remove device from user: HTTP ${userDeviceResponse.status}`);
+            }
+
+            // Remove from local devices map
+            this.devices.delete(deviceId);
+
+            // Update dashboard
+            this.updateDashboard();
+
+            // Notify callbacks
+            this.notifyCallbacks();
+
+            console.log(`✅ Device ${deviceId} removed successfully`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error removing device:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Cleanup listeners
      */
     cleanup() {

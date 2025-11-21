@@ -17,13 +17,84 @@
 #define WIFI_SSID       "Jak2.4G_"
 #define WIFI_PASSWORD   "Jakk626442"
 
+
 // ---- Firebase Realtime Database URL ----
 #define FIREBASE_URL "https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app"
+
+// ---- Modbus Configuration ----
+#define DE_RE_PIN   4
+#define MODE_SEND   HIGH
+#define MODE_RECV   LOW
 
 // ---- Global State ----
 String deviceId = "";      // Format: esp32_<12 hex characters>
 String ownerUid = "";      // Firebase Auth UID of device owner
-bool deviceClaimed = false; // Whether device has been claimed   
+bool deviceClaimed = false; // Whether device has been claimed 
+
+// Serial2: RX=27, TX=26 (ตามบอร์ด IOXESP32)
+const uint32_t MODBUS_BAUD = 4800;
+
+// -------- CRC16 (Modbus) ----------
+uint16_t modbusCRC(const uint8_t *buf, uint16_t len) {
+  uint16_t crc = 0xFFFF;
+  for (uint16_t pos = 0; pos < len; pos++) {
+    crc ^= buf[pos];
+    for (uint8_t i = 0; i < 8; i++) {
+      if (crc & 0x0001) crc = (crc >> 1) ^ 0xA001;
+      else              crc >>= 1;
+    }
+  }
+  return crc;
+}
+
+// ส่งคำสั่งอ่าน Holding Registers addr=0x0000, qty=7 (ทั้งหมด 7 รีจิสเตอร์)
+bool read7Regs(uint16_t outRegs[7]) {
+  // Request: [ID=0x01][FC=0x03][AddrHi=0x00][AddrLo=0x00][QtyHi=0x00][QtyLo=0x07][CRCLo][CRCHi]
+  uint8_t req[8] = { 0x01, 0x03, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00 };
+  uint16_t crc = modbusCRC(req, 6);
+  req[6] = crc & 0xFF;       // CRC Low
+  req[7] = (crc >> 8) & 0xFF; // CRC High
+
+  // ตอบกลับคาดหวัง: [ID][FC][ByteCount=14][Data(14 bytes)][CRCLo][CRCHi] → รวม 19 bytes
+  const size_t RESP_LEN = 19;
+  uint8_t resp[RESP_LEN];
+
+  // ส่ง
+  digitalWrite(DE_RE_PIN, MODE_SEND);
+  Serial2.write(req, sizeof(req));
+  Serial2.flush();                 // รอส่งหมด
+  digitalWrite(DE_RE_PIN, MODE_RECV);
+
+  // รับ
+  size_t got = 0;
+  unsigned long t0 = millis();
+  while (got < RESP_LEN && (millis() - t0) < 500) {  // timeout 500ms
+    if (Serial2.available()) {
+      resp[got++] = Serial2.read();
+    }
+  }
+  if (got != RESP_LEN) {
+    // ลองกรณีตอบผิดจังหวะ/เหลื่อม: เคลียร์บัฟเฟอร์
+    while (Serial2.available()) (void)Serial2.read();
+    return false;
+  }
+
+  // ตรวจ ID/FC/ByteCount
+  if (resp[0] != 0x01 || resp[1] != 0x03 || resp[2] != 14) return false;
+
+  // ตรวจ CRC
+  uint16_t crcCalc = modbusCRC(resp, RESP_LEN - 2);
+  uint16_t crcRecv = resp[RESP_LEN - 2] | (resp[RESP_LEN - 1] << 8);
+  if (crcCalc != crcRecv) return false;
+
+  // แปลง 7 ค่าจาก data 14 bytes (big-endian)
+  for (int i = 0; i < 7; i++) {
+    uint8_t hi = resp[3 + 2*i];
+    uint8_t lo = resp[3 + 2*i + 1];
+    outRegs[i] = (uint16_t)hi << 8 | lo;
+  }
+  return true;
+}
 
 /*********************************************
  * HTTP GET Helper
@@ -154,10 +225,6 @@ void waitForDeviceClaim() {
     url += "/device_registry/" + deviceId + ".json";
     
     Serial.printf("Attempt #%d\n", attemptCount);
-    Serial.print("Querying URL: ");
-    Serial.println(url);
-    Serial.println("");
-    
     String response = httpGET(url);
     
     // Trim whitespace from response
@@ -166,10 +233,8 @@ void waitForDeviceClaim() {
     // Case 1: Device doesn't exist (not claimed yet)
     if (response == "null" || response.length() == 0) {
       Serial.println("⚠ Device NOT CLAIMED");
-      Serial.print("   → Device ID being checked: ");
-      Serial.println(deviceId);
-      Serial.println("   → This device ID does not exist in Firebase");
-      Serial.println("   → Please claim this device in the dashboard using the Device ID above");
+      Serial.println("Claim Device using ID: " +deviceId);
+      Serial.println("   → Waiting for user to claim via dashboard...");
       Serial.println("   → Retrying in 5 seconds...\n");
       delay(5000);
       continue;
@@ -299,6 +364,15 @@ void setup() {
   Serial.begin(115200);
   delay(500);
   
+  //Modbus Setup
+  pinMode(DE_RE_PIN, OUTPUT);
+  digitalWrite(DE_RE_PIN, MODE_RECV);
+  Serial2.begin(MODBUS_BAUD, SERIAL_8N1, 27, 26);
+  Serial2.setTimeout(200);
+
+  Serial.println("Start RS485 read 7-in-1 (ID=1, 4800, 8N1, FC=0x03, addr0..6)");
+
+
   Serial.println("\n\n");
   Serial.println("=================================");
   Serial.println("🌱 DURIAN FARM SENSOR SYSTEM");
@@ -335,11 +409,6 @@ void setup() {
   Serial.print("   Device ID: ");
   Serial.println(deviceId);
   Serial.println("");
-  Serial.println("⚠ IMPORTANT: Use this Device ID when claiming the device in the dashboard!");
-  Serial.println("   → Copy the Device ID above");
-  Serial.println("   → Go to the device claim page");
-  Serial.println("   → Paste this Device ID exactly as shown");
-  Serial.println("");
 
   // Wait for device to be claimed
   waitForDeviceClaim();
@@ -360,18 +429,25 @@ void loop() {
     return;
   }
 
-  // TODO: Read actual sensor values here
-  // Example sensor values (replace with real sensor readings)
-  float moisture = 25.3;      // Soil moisture (%)
-  float temp = 30.1;          // Temperature (°C)
-  int ec = 890;               // Electrical conductivity (µS/cm)
-  float ph = 6.4;             // pH level
-  int n = 11;                 // Nitrogen (mg/kg)
-  int p = 6;                  // Phosphorus (mg/kg)
-  int k = 8;                  // Potassium (mg/kg)
+ uint16_t regs[7];
+  if (read7Regs(regs)) {
+    // สเกลตามที่ร้านนี้ระบุ: soil/10, temp/10, pH/10; EC เป็น uS/cm ตรง ๆ; N,P,K เป็น mg/kg
+    float moisture = regs[0] / 10.0f;
+    float temp = regs[1] / 10.0f;
+    uint16_t ec = regs[2];
+    float ph   = regs[3] / 10.0f;
+    uint16_t n = regs[4];
+    uint16_t p = regs[5];
+    uint16_t k = regs[6];
 
-  // Upload sensor data to Firebase
-  uploadSensorData(moisture, temp, ec, ph, n, p, k);
+    Serial.printf("Soil: %.1f %%  Temp: %.1f C  EC: %u  pH: %.1f  N:%u  P:%u  K:%u\n",
+                  moisture, temp, ec, ph, n, p, k);
+    // Upload sensor data to Firebase
+    uploadSensorData(moisture, temp, ec, ph, n, p, k);
+  } else {
+    Serial.println("Read FAIL (timeout/CRC/format)");
+
+  }
 
   // Wait before next upload cycle
   Serial.println("⏳ Waiting 5 seconds before next upload...\n");
