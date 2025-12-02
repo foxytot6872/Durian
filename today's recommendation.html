@@ -122,7 +122,7 @@
                         </h3>
                         <div class="recommendation-value">28°C</div>
                         <div class="recommendation-description">
-                            Perfect temperature for durian growth. Monitor for any sudden changes that might affect fruit development.
+                             Monitor for any sudden changes that might affect fruit development.
                         </div>
                     </div>
 
@@ -260,7 +260,7 @@
         if (icon.classList.contains('fa-tint')) {
           const text = (sensor && sensor.moisture !== undefined && sensor.moisture !== null)
             ? `${Math.round(sensor.moisture)}%`
-            : 'No Data';
+            : 'Loading';
           valueEl.textContent = text;
 
           // update description based on moisture level
@@ -288,15 +288,36 @@
         if (icon.classList.contains('fa-thermometer-half')) {
           const text = (sensor && sensor.temperature !== undefined && sensor.temperature !== null)
             ? `${Math.round(sensor.temperature)}°C`
-            : 'No Data';
+            : 'Loading';
           valueEl.textContent = text;
+
+          // update temperature description and actionable advice
+          if (descEl) {
+            if (!sensor || sensor.temperature === undefined || sensor.temperature === null) {
+              descEl.textContent = 'No temperature data available.';
+            } else {
+              const t = Number(sensor.temperature);
+              if (t < 15) {
+                descEl.textContent = 'Very cold. Protect young trees from frost and avoid irrigation during freezing conditions.';
+              } else if (t < 20) {
+                descEl.textContent = 'Cool temperatures. Monitor for slowed growth and delay heavy fertilization.';
+              } else if (t <= 30) {
+                descEl.textContent = 'Temperature is optimal for durian growth. Maintain regular monitoring.';
+              } else if (t <= 35) {
+                descEl.textContent = 'Warm conditions. Increase irrigation frequency slightly and provide temporary shade if possible.';
+              } else {
+                descEl.textContent = 'Heat stress risk. Provide shade, increase irrigation, and monitor trees closely for wilting.';
+              }
+            }
+          }
+
           return;
         }
 
         // pH / analytics (fa-chart-line)
         if (icon.classList.contains('fa-chart-line')) {
           const ph = sensor && (sensor.ph !== undefined && sensor.ph !== null) ? Number(sensor.ph) : null;
-          valueEl.textContent = ph !== null && !Number.isNaN(ph) ? `pH ${ph.toFixed(1)}` : 'No Data';
+          valueEl.textContent = ph !== null && !Number.isNaN(ph) ? `pH ${ph.toFixed(1)}` : 'Loading';
 
           // update pH description when available
           if (descEl) {
@@ -335,7 +356,7 @@
               }
             }
           } else {
-            valueEl.textContent = 'No Data';
+            valueEl.textContent = 'Loading';
             if (descEl) descEl.textContent = 'No nutrient readings available.';
           }
           return;
