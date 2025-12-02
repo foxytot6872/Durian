@@ -21,24 +21,22 @@
  *********************************************/
 
 // ---- WiFi Configuration ----
-#define WIFI_SSID       "Jak2.4G_"
-#define WIFI_PASSWORD   "Jakk626442"
+#define WIFI_SSID       "shawty_2.4G"
+#define WIFI_PASSWORD   "sundaymorning"
 
 // ---- Firebase Realtime Database URL ----
 #define FIREBASE_URL "https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 // ---- Valve Control Configuration ----
-#define VALVE_RELAY_PIN 2  // GPIO 2 - Safe pin on ESP32 (not flash pins, not input-only)
-                            // Change this if your relay is connected to a different pin
+// NOTE: GPIO 36 is INPUT-ONLY and cannot be used for relay output!
+// Use a valid output pin instead. Safe output pins on ESP32:
+// GPIO 2, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33
+#define VALVE_RELAY_PIN 17  // GPIO 2 - Safe output pin on ESP32
+                            // Change this to match your relay connection
 
-// NOTE: If your relay module is ACTIVE-LOW (common for relay modules):
-//   - LOW = Relay ON (valve opens)
-//   - HIGH = Relay OFF (valve closes)
-// If your relay is ACTIVE-HIGH:
-//   - HIGH = Relay ON (valve opens)
-//   - LOW = Relay OFF (valve closes)
-// Adjust the setValveState() function accordingly
-#define RELAY_ACTIVE_LOW true  // Set to false if relay is active-high
+// Simple logic:
+//   - valveStatus = "ON" → GPIO = HIGH (1) → LED/Relay ON
+//   - valveStatus = "OFF" → GPIO = LOW (0) → LED/Relay OFF
 
 // ---- Polling Configuration ----
 #define VALVE_POLL_INTERVAL 2000  // Poll Firebase every 2 seconds (adjust as needed)
@@ -48,6 +46,46 @@ String deviceId = "";      // Format: esp32_<12 hex characters>
 String ownerUid = "";      // Firebase Auth UID of device owner (userId)
 bool deviceClaimed = false; // Whether device has been claimed
 String lastValveStatus = ""; // Last known valve status to detect changes
+
+/*********************************************
+ * HTTP PUT Helper
+ * Uploads JSON data to Firebase
+ * Returns HTTP status code
+ * Sets httpCode via reference to check for errors
+ *********************************************/
+int httpPUT(String url, String json, int* httpCodePtr = nullptr) {
+  HTTPClient http;
+  
+  if (!http.begin(url)) {
+    Serial.println("❌ ERROR: Failed to connect to server");
+    if (httpCodePtr) *httpCodePtr = -1;
+    return -1;
+  }
+  
+  http.addHeader("Content-Type", "application/json");
+  int httpCode = http.PUT(json);
+  String payload = http.getString();
+  http.end();
+
+  if (httpCodePtr) *httpCodePtr = httpCode;
+
+  Serial.printf("[PUT] %s\n", url.c_str());
+  Serial.printf("HTTP Code: %d\n", httpCode);
+  Serial.println("Request JSON:");
+  Serial.println(json);
+  
+  if (httpCode > 0 && httpCode < 400) {
+    Serial.println("✅ Upload successful");
+  } else {
+    Serial.printf("❌ Upload failed: HTTP %d\n", httpCode);
+    Serial.println("Response:");
+    Serial.println(payload);
+  }
+  
+  Serial.println("---");
+
+  return httpCode;
+}
 
 /*********************************************
  * HTTP GET Helper
@@ -78,7 +116,6 @@ String httpGET(String url, int* httpCodePtr = nullptr) {
     Serial.printf("⚠ Warning: HTTP Code %d\n", httpCode);
     if (httpCode == 401) {
       Serial.println("❌ PERMISSION DENIED - Check Firebase security rules!");
-      Serial.println("   → Update rules to allow public read for /valves/ path");
     }
   }
   
@@ -171,7 +208,8 @@ void waitForDeviceClaim() {
     url += "/device_registry/" + deviceId + ".json";
     
     Serial.printf("Attempt #%d\n", attemptCount);
-    String response = httpGET(url);
+    int httpCode = 0;
+    String response = httpGET(url, &httpCode);
     
     // Trim whitespace from response
     response.trim();
@@ -216,29 +254,37 @@ void waitForDeviceClaim() {
       continue;
     }
 
-    // Display zone info (for logging only, not needed for valve path)
-    if (doc.containsKey("zone")) {
-      String zone = doc["zone"].as<String>();
-      Serial.print("Zone: ");
-      Serial.println(zone);
-    }
-
     // Success! Device is claimed
     deviceClaimed = true;
     
     Serial.println("\n=================================");
     Serial.println("🎉 DEVICE CLAIMED SUCCESSFULLY!");
     Serial.println("=================================");
-    Serial.print("Owner UID (userId): ");
+    Serial.print("Owner UID: ");
     Serial.println(ownerUid);
     Serial.print("Device ID: ");
     Serial.println(deviceId);
     
-    // Display device info if available
+    // Extract device info from registry
+    String deviceName = "";
+    String zone = "";
+    
     if (doc.containsKey("name")) {
+      deviceName = doc["name"].as<String>();
       Serial.print("Device Name: ");
-      Serial.println(doc["name"].as<String>());
+      Serial.println(deviceName);
     }
+    if (doc.containsKey("zone")) {
+      zone = doc["zone"].as<String>();
+      Serial.print("Zone: ");
+      Serial.println(zone);
+    }
+    
+    // Upload device info to Firebase (includes type: "valve")
+    if (deviceName.length() > 0 || zone.length() > 0) {
+      uploadDeviceInfo(deviceName, zone);
+    }
+    
     Serial.println("=================================\n");
     Serial.println("✅ Ready to read valve commands!");
     Serial.println("");
@@ -248,31 +294,126 @@ void waitForDeviceClaim() {
 }
 
 /*********************************************
+ * Upload Device Info to Firebase
+ * 
+ * Path: /users/<ownerUid>/devices/<deviceId>/device_info/
+ * 
+ * Writes device metadata including type, name, zone, etc.
+ * This helps identify the device type (sensor, valve, etc.)
+ *********************************************/
+void uploadDeviceInfo(String deviceName, String zone) {
+  // Validate device is claimed
+  if (!deviceClaimed || ownerUid.length() == 0) {
+    Serial.println("❌ ERROR: Device not claimed. Cannot upload device info.");
+    return;
+  }
+
+  // Build path: /users/<ownerUid>/devices/<deviceId>/device_info.json
+  String path = FIREBASE_URL;
+  path += "/users/" + ownerUid + "/devices/" + deviceId + "/device_info.json";
+
+  // Build JSON payload
+  String json = "{";
+  json += "\"device_id\":\"" + deviceId + "\",";
+  json += "\"type\":\"valve\",";  // Device type: valve
+  json += "\"name\":\"" + deviceName + "\",";
+  json += "\"zone\":\"" + zone + "\",";
+  json += "\"firmware_version\":\"1.0.0\",";
+  json += "\"last_online\":" + String(millis());
+  json += "}";
+
+  // Upload to Firebase
+  Serial.println("📤 Uploading device info...");
+  int httpCode = 0;
+  int result = httpPUT(path, json, &httpCode);
+  
+  if (httpCode > 0 && httpCode < 400) {
+    Serial.println("✅ Device info uploaded successfully");
+  } else {
+    Serial.printf("❌ Failed to upload device info (HTTP %d)\n", httpCode);
+  }
+}
+
+/*********************************************
  * Set Valve State
  * 
- * Controls the relay pin based on valve status
- * Handles both active-low and active-high relay modules
+ * Simple logic:
+ * - valveStatus = "ON" → GPIO = HIGH (1) → LED/Relay ON
+ * - valveStatus = "OFF" → GPIO = LOW (0) → LED/Relay OFF
  * 
  * @param state - "ON" or "OFF" (uppercase)
  *********************************************/
 void setValveState(String state) {
-  bool valveOn = (state == "ON");
+  // Normalize state to uppercase
+  state.toUpperCase();
   
-  if (RELAY_ACTIVE_LOW) {
-    // Active-low relay: LOW = ON, HIGH = OFF
-    digitalWrite(VALVE_RELAY_PIN, valveOn ? LOW : HIGH);
+  // Validate pin is valid output pin
+  if (VALVE_RELAY_PIN == 36 || VALVE_RELAY_PIN == 39) {
+    Serial.println("❌ ERROR: GPIO 36/39 are INPUT-ONLY pins! Cannot use for output.");
+    Serial.println("   → Change VALVE_RELAY_PIN to a valid output pin (2, 4, 5, 12-19, 21-23, 25-27, 32-33)");
+    return;
+  }
+  
+  // Simple direct mapping
+  if (state == "ON") {
+    digitalWrite(VALVE_RELAY_PIN, HIGH);  // GPIO = 1, LED ON
+  } else if (state == "OFF") {
+    digitalWrite(VALVE_RELAY_PIN, LOW);   // GPIO = 0, LED OFF
   } else {
-    // Active-high relay: HIGH = ON, LOW = OFF
-    digitalWrite(VALVE_RELAY_PIN, valveOn ? HIGH : LOW);
+    Serial.print("⚠ Invalid state: ");
+    Serial.println(state);
+    return;
   }
   
   Serial.print("🔧 Valve ");
-  Serial.print(valveOn ? "turned ON" : "turned OFF");
-  Serial.print(" (GPIO ");
+  Serial.print(state);
+  Serial.print(" → GPIO ");
   Serial.print(VALVE_RELAY_PIN);
   Serial.print(" = ");
   Serial.print(digitalRead(VALVE_RELAY_PIN));
+  Serial.print(" (");
+  Serial.print(state == "ON" ? "LED ON" : "LED OFF");
   Serial.println(")");
+}
+
+/*********************************************
+ * Write Valve Status to Firebase
+ * 
+ * Path: /users/<userId>/devices/<deviceId>/valve_control/valveStatus
+ * 
+ * Note: ESP32 devices can write to this path (public write per security rules)
+ *********************************************/
+bool writeValveStatusToFirebase(String status) {
+  // Validate required fields
+  if (ownerUid.length() == 0 || deviceId.length() == 0) {
+    Serial.println("❌ ERROR: Missing required identifiers (ownerUid or deviceId)");
+    return false;
+  }
+
+  // Validate status
+  status.toUpperCase();
+  if (status != "ON" && status != "OFF") {
+    Serial.println("❌ ERROR: Invalid valve status. Must be 'ON' or 'OFF'");
+    return false;
+  }
+
+  // Build path: /users/<userId>/devices/<deviceId>/valve_control/valveStatus.json
+  String url = FIREBASE_URL;
+  url += "/users/" + ownerUid + "/devices/" + deviceId + "/valve_control/valveStatus.json";
+  
+  // Write as JSON string (with quotes)
+  String json = "\"" + status + "\"";
+  
+  int httpCode = 0;
+  int result = httpPUT(url, json, &httpCode);
+  
+  if (httpCode > 0 && httpCode < 400) {
+    Serial.printf("✅ Valve status written to Firebase: %s\n", status.c_str());
+    return true;
+  } else {
+    Serial.printf("❌ Failed to write valve status (HTTP %d)\n", httpCode);
+    return false;
+  }
 }
 
 /*********************************************
@@ -281,6 +422,7 @@ void setValveState(String state) {
  * Path: /users/<userId>/devices/<deviceId>/valve_control/valveStatus
  * 
  * Returns: "ON", "OFF", or "" (empty if error/not found)
+ * If status doesn't exist, initializes it to "OFF" in Firebase
  *********************************************/
 String readValveStatus() {
   // Validate required fields
@@ -310,10 +452,19 @@ String readValveStatus() {
     return "OFF"; // Default to OFF on HTTP error
   }
 
-  // Handle null or empty response
+  // Handle null or empty response - initialize to OFF in Firebase
   if (response == "null" || response.length() == 0) {
-    Serial.println("⚠ Valve status not found in Firebase (defaulting to OFF)");
-    return "OFF"; // Default to OFF if not set
+    Serial.println("⚠ Valve status not found in Firebase");
+    Serial.println("   → Initializing valve status to OFF in Firebase...");
+    
+    // Write default "OFF" status to Firebase
+    if (writeValveStatusToFirebase("OFF")) {
+      Serial.println("✅ Valve status initialized to OFF in Firebase");
+      return "OFF";
+    } else {
+      Serial.println("⚠ Failed to initialize valve status, using local default OFF");
+      return "OFF";
+    }
   }
 
   // Check if response is a JSON error object
@@ -336,6 +487,8 @@ String readValveStatus() {
     Serial.print("⚠ Invalid valve status: ");
     Serial.print(response);
     Serial.println(" (expected 'ON' or 'OFF', defaulting to OFF)");
+    // Try to fix invalid status by writing "OFF"
+    writeValveStatusToFirebase("OFF");
     return "OFF"; // Default to OFF for invalid values
   }
 }
@@ -377,9 +530,7 @@ void checkValveStatus() {
     static int checkCount = 0;
     checkCount++;
     if (checkCount % 10 == 0) {
-      Serial.print("✅ Valve status: ");
-      Serial.print(currentStatus);
-      Serial.println(" (unchanged)");
+      Serial.printf("✅ Valve status: %s (unchanged)\n", currentStatus.c_str());
     }
   }
 }
@@ -472,15 +623,61 @@ void setup() {
 }
 
 /*********************************************
+ * Check if device is still claimed in registry
+ * Returns true if still claimed, false if removed
+ *********************************************/
+bool verifyDeviceClaim() {
+  if (deviceId.length() == 0) {
+    return false;
+  }
+
+  String url = FIREBASE_URL;
+  url += "/device_registry/" + deviceId + ".json";
+  
+  int httpCode = 0;
+  String response = httpGET(url, &httpCode);
+  response.trim();
+
+  // Device doesn't exist (removed)
+  if (response == "null" || response.length() == 0 || httpCode == 404) {
+    Serial.println("⚠ Device has been removed from registry");
+    return false;
+  }
+
+  // Parse response to check owner_uid
+  DynamicJsonDocument doc(512);
+  DeserializationError err = deserializeJson(doc, response);
+  
+  if (err) {
+    Serial.println("⚠ Error parsing device registry response");
+    return true; // Assume still claimed if parse fails
+  }
+
+  if (!doc.containsKey("owner_uid")) {
+    Serial.println("⚠ Device registry entry has no owner_uid");
+    return false;
+  }
+
+  String currentOwner = doc["owner_uid"].as<String>();
+  if (currentOwner != ownerUid) {
+    Serial.println("⚠ Device ownership changed");
+    return false;
+  }
+
+  return true; // Device is still claimed
+}
+
+/*********************************************
  * LOOP - Main Valve Control Cycle
  * 
  * Polls Firebase for valve status every VALVE_POLL_INTERVAL
  * Updates relay output if status changes
+ * Periodically verifies device is still claimed
  *********************************************/
 void loop() {
   // Ensure device is still claimed
   if (!deviceClaimed || ownerUid.length() == 0) {
-    Serial.println("⚠ Device claim lost. Re-checking...");
+    Serial.println("\n⚠ Device claim lost. Re-checking...\n");
     waitForDeviceClaim();
     // Re-read initial status after re-claiming
     lastValveStatus = readValveStatus();
@@ -488,6 +685,39 @@ void loop() {
       setValveState(lastValveStatus);
     }
     return;
+  }
+
+  // Periodically verify device is still in registry (every 30 seconds)
+  static unsigned long lastClaimCheck = 0;
+  unsigned long now = millis();
+  if (now - lastClaimCheck > 30000) { // Check every 30 seconds
+    lastClaimCheck = now;
+    if (!verifyDeviceClaim()) {
+      Serial.println("\n=================================");
+      Serial.println("❌ DEVICE REMOVED FROM REGISTRY");
+      Serial.println("=================================");
+      Serial.println("Device has been removed from Firebase.");
+      Serial.println("Resetting claim status and waiting for re-claim...");
+      Serial.println("=================================\n");
+      
+      // Reset claim status
+      deviceClaimed = false;
+      ownerUid = "";
+      lastValveStatus = "";
+      
+      // Turn valve OFF for safety
+      setValveState("OFF");
+      
+      // Go back to waiting for claim
+      waitForDeviceClaim();
+      
+      // Re-read initial status after re-claiming
+      lastValveStatus = readValveStatus();
+      if (lastValveStatus.length() > 0) {
+        setValveState(lastValveStatus);
+      }
+      return;
+    }
   }
 
   // Check valve status from Firebase

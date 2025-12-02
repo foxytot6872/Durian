@@ -924,23 +924,64 @@
                     }
                 }
 
-                const response = await fetch(`${DB_URL}/device_registry/${deviceId}.json?auth=${claimIdToken}`);
+                // Add cache-busting parameter to avoid stale data
+                const url = `${DB_URL}/device_registry/${deviceId}.json?auth=${claimIdToken}&t=${Date.now()}`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    cache: 'no-store' // Prevent caching
+                });
                 
-                if (response.status === 404) return null;
+                console.log(`Checking device ${deviceId}: HTTP ${response.status}`);
+                
+                if (response.status === 404) {
+                    console.log(`Device ${deviceId} not found (404)`);
+                    return null;
+                }
+                
                 if (response.status === 401 || response.status === 403) {
                     if (claimCurrentUser) {
                         claimIdToken = await claimCurrentUser.getIdToken(true);
-                        const retryResponse = await fetch(`${DB_URL}/device_registry/${deviceId}.json?auth=${claimIdToken}`);
-                        if (retryResponse.status === 404) return null;
+                        const retryUrl = `${DB_URL}/device_registry/${deviceId}.json?auth=${claimIdToken}&t=${Date.now()}`;
+                        const retryResponse = await fetch(retryUrl, {
+                            method: 'GET',
+                            cache: 'no-store'
+                        });
+                        if (retryResponse.status === 404) {
+                            console.log(`Device ${deviceId} not found (404) after retry`);
+                            return null;
+                        }
                         if (!retryResponse.ok) throw new Error('Authentication failed');
-                        return await retryResponse.json();
+                        const retryData = await retryResponse.json();
+                        console.log(`Device ${deviceId} retry data:`, retryData);
+                        // Return null if data is null or empty object
+                        if (retryData === null || retryData === undefined) return null;
+                        if (typeof retryData === 'object' && Object.keys(retryData).length === 0) return null;
+                        return retryData;
                     }
                     throw new Error('Authentication required');
                 }
                 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
-                return data === null ? null : data;
+                console.log(`Device ${deviceId} response data:`, data);
+                
+                // Return null if data is null, undefined, or empty object
+                if (data === null || data === undefined) {
+                    console.log(`Device ${deviceId} data is null/undefined`);
+                    return null;
+                }
+                if (typeof data === 'object' && Object.keys(data).length === 0) {
+                    console.log(`Device ${deviceId} data is empty object`);
+                    return null;
+                }
+                
+                // Validate that it has required fields
+                if (!data.owner_uid) {
+                    console.log(`Device ${deviceId} exists but has no owner_uid`);
+                    return null; // Treat as unclaimed if no owner_uid
+                }
+                
+                return data;
             } catch (error) {
                 console.error('Error checking device:', error);
                 throw error;
@@ -1094,10 +1135,13 @@
 
                 try {
                     const existingDevice = await checkDeviceExists(deviceId);
+                    console.log('Existing device check result:', existingDevice);
 
-                    if (existingDevice && existingDevice.owner_uid) {
+                    // Check if device exists and has valid owner_uid
+                    if (existingDevice !== null && typeof existingDevice === 'object' && existingDevice.owner_uid) {
+                        console.log(`Device ${deviceId} is already claimed by ${existingDevice.owner_uid}`);
                         if (existingDevice.owner_uid === claimCurrentUser.uid) {
-                            showClaimError('This device is already claimed by you.');
+                            showClaimError('This device is already claimed by you. If you don\'t see it in your device list, try refreshing the page.');
                         } else {
                             showClaimError('This device is already owned by another user.');
                         }
@@ -1105,6 +1149,8 @@
                         return;
                     }
 
+                    // Device doesn't exist or is not claimed - proceed with claiming
+                    console.log(`Device ${deviceId} is not claimed, proceeding with claim...`);
                     await claimDevice(deviceId, deviceName, zone);
                     showClaimSuccess(`Device ${deviceId} claimed successfully!`);
                     deviceClaimForm.reset();

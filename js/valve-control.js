@@ -74,14 +74,17 @@ class ValveControlManager {
 
         // Setup valve control for each device
         for (const device of devices) {
-            // Only setup for ESP32 devices (valve controllers)
-            if (device.deviceId && device.deviceId.startsWith('esp32_')) {
+            // Only setup for ESP32 devices with type === 'valve'
+            if (device.deviceId && device.deviceId.startsWith('esp32_') && device.type === 'valve') {
                 await this.setupDeviceValveControl(device);
             }
         }
 
         // Setup the main valve toggle if it exists (for Map page)
-        this.setupMainValveToggle();
+        // Wait a bit for devices to load, then setup toggle
+        setTimeout(async () => {
+            await this.setupMainValveToggle();
+        }, 2000);
     }
 
     /**
@@ -269,50 +272,99 @@ class ValveControlManager {
 
     /**
      * Setup main valve toggle on Map page
-     * This is a general toggle that controls the first available valve device
+     * Finds ESP32 devices in the selected zone and controls the first one with valve control
      */
-    setupMainValveToggle() {
+    async setupMainValveToggle() {
         const valveToggle = document.getElementById('wateringValve');
         if (!valveToggle) {
-            // Toggle doesn't exist, skip
+            console.log('⚠️ Valve toggle not found on Map page');
             return;
         }
 
-        // Get the first valve device (or use selected zone)
-        const selectedZone = localStorage.getItem('selectedZone') || 'A';
-        
-        // Find device for selected zone
-        let targetDevice = null;
-        if (window.firebaseDashboard) {
-            const devices = window.firebaseDashboard.getDevices();
-            // Find ESP32 device that is a valve controller (check device_info.type or name)
-            targetDevice = devices.find(d => {
-                const zone = d.zone || '';
-                const zoneId = zone.replace('Zone ', '').trim();
-                const isValveDevice = d.deviceId && d.deviceId.startsWith('esp32_') && 
-                                     (d.name?.toLowerCase().includes('valve') || 
-                                      d.deviceInfo?.type === 'valve' ||
-                                      d.deviceInfo?.name?.toLowerCase().includes('valve'));
-                return zoneId === selectedZone && isValveDevice;
-            });
+        // Wait for devices to load
+        let devices = [];
+        let attempts = 0;
+        while (devices.length === 0 && attempts < 10) {
+            if (window.firebaseDashboard) {
+                devices = window.firebaseDashboard.getDevices();
+            } else {
+                devices = await this.loadUserDevices();
+            }
+            if (devices.length === 0) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                attempts++;
+            }
         }
 
-        if (!targetDevice) {
-            console.log('⚠️ No valve device found for selected zone');
-            // Disable toggle
+        if (devices.length === 0) {
+            console.log('⚠️ No devices found');
             valveToggle.disabled = true;
+            const statusText = document.getElementById('valveStatusText');
+            if (statusText) {
+                statusText.textContent = 'No devices found';
+            }
             return;
         }
 
-        const deviceId = targetDevice.deviceId;
+        // Get selected zone or use first available zone
+        const selectedZone = localStorage.getItem('selectedZone') || 'A';
+        console.log(`🔍 Looking for valve device in Zone ${selectedZone}`);
+
+        // Find ONLY valve devices (type === 'valve') in the selected zone
+        const zoneDevices = devices.filter(d => {
+            const zone = d.zone || '';
+            const zoneId = zone.replace('Zone ', '').trim().toUpperCase();
+            const isValveDevice = d.type === 'valve'; // Only valve devices
+            return d.deviceId && d.deviceId.startsWith('esp32_') && isValveDevice && zoneId === selectedZone.toUpperCase();
+        });
+
+        if (zoneDevices.length === 0) {
+            console.log(`⚠️ No valve devices found in Zone ${selectedZone}`);
+            // Try to find any valve device (regardless of zone)
+            const anyValve = devices.find(d => {
+                return d.deviceId && d.deviceId.startsWith('esp32_') && d.type === 'valve';
+            });
+            if (anyValve) {
+                console.log(`✅ Using valve device from Zone ${anyValve.zone || 'Unknown'}: ${anyValve.deviceId}`);
+                await this.setupToggleForDevice(anyValve.deviceId, valveToggle);
+            } else {
+                valveToggle.disabled = true;
+                const statusText = document.getElementById('valveStatusText');
+                if (statusText) {
+                    statusText.textContent = 'No valve device found';
+                }
+                console.log('⚠️ No valve devices found. Make sure device type is set to "valve" in Firebase.');
+            }
+            return;
+        }
+
+        // Use the first valve device found in the zone
+        const targetDevice = zoneDevices[0];
+        console.log(`✅ Found valve device: ${targetDevice.deviceId} (type: ${targetDevice.type}) in ${targetDevice.zone || 'Unknown'}`);
+        await this.setupToggleForDevice(targetDevice.deviceId, valveToggle);
+    }
+
+    /**
+     * Setup toggle for a specific device
+     */
+    async setupToggleForDevice(deviceId, valveToggle) {
+        // Prevent duplicate event listeners
+        if (valveToggle.dataset.valveSetup === 'true') {
+            console.log('⚠️ Toggle already set up, skipping...');
+            return;
+        }
+        valveToggle.dataset.valveSetup = 'true';
+        valveToggle.dataset.deviceId = deviceId;
 
         // Read initial status
-        this.readValveStatus(deviceId).then(status => {
-            if (status) {
-                valveToggle.checked = (status === 'ON');
-                this.updateValveStatusIndicator(status);
-            }
-        });
+        const initialStatus = await this.readValveStatus(deviceId);
+        if (initialStatus) {
+            valveToggle.checked = (initialStatus === 'ON');
+            this.updateValveStatusIndicator(initialStatus);
+            console.log(`✅ Initial valve status: ${initialStatus}`);
+        } else {
+            console.log('⚠️ Could not read initial valve status');
+        }
 
         // Setup toggle handler
         valveToggle.addEventListener('change', async (e) => {
@@ -336,7 +388,7 @@ class ValveControlManager {
                     statusText.textContent = `Valve ${newStatus}`;
                 }
                 
-                console.log(`✅ Valve toggled: ${newStatus}`);
+                console.log(`✅ Valve toggled: ${deviceId} = ${newStatus}`);
             } catch (error) {
                 // Revert toggle on error
                 e.target.checked = !e.target.checked;
@@ -354,12 +406,13 @@ class ValveControlManager {
             }
         });
 
-        // Setup periodic status check
+        // Setup periodic status check (sync with ESP32 polling)
         setInterval(async () => {
             const currentStatus = await this.readValveStatus(deviceId);
             if (currentStatus && currentStatus !== (valveToggle.checked ? 'ON' : 'OFF')) {
                 valveToggle.checked = (currentStatus === 'ON');
                 this.updateValveStatusIndicator(currentStatus);
+                console.log(`🔄 Valve status synced: ${currentStatus}`);
             }
         }, 2000);
     }
@@ -421,6 +474,23 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         valveControlManager = new ValveControlManager();
         window.valveControl = valveControlManager;
+        
+        // If on Map page, also setup toggle when Firebase Dashboard is ready
+        if (window.location.pathname.includes('Map.html') || window.location.pathname.includes('map.html')) {
+            // Wait for Firebase Dashboard to load devices
+            const checkDashboard = setInterval(() => {
+                if (window.firebaseDashboard && window.firebaseDashboard.getDevices().length > 0) {
+                    clearInterval(checkDashboard);
+                    // Setup toggle after devices are loaded
+                    if (valveControlManager) {
+                        valveControlManager.setupMainValveToggle();
+                    }
+                }
+            }, 500);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => clearInterval(checkDashboard), 10000);
+        }
     }, 1000);
 });
 
