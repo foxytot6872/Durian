@@ -129,24 +129,28 @@
                             <span class="stat-change positive">Ideal</span>
                         </div>
                     </div>
+
+                    <!-- Added: Soil pH -->
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-cloud-rain"></i>
+                            <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>75%</h3>
-                            <p>Humidity</p>
-                            <span class="stat-change positive">Good</span>
+                            <h3>--</h3>
+                            <p>Soil pH</p>
+                            <span class="stat-change">No Data</span>
                         </div>
                     </div>
+
+                    <!-- Added: Plant Nutrients (N/P/K) -->
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i class="fas fa-seedling"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>92%</h3>
+                            <h3>--</h3>
                             <p>Plant Nutrients</p>
-                            <span class="stat-change positive">Excellent</span>
+                            <span class="stat-change">No Data</span>
                         </div>
                     </div>
                 </div>
@@ -269,6 +273,114 @@
                     window.location.href = 'Map.html';
                 });
             });
+        });
+
+        // Wait for firebaseDashboard and update stat cards (moisture, temp, pH, nutrients)
+        document.addEventListener('DOMContentLoaded', () => {
+            const waitForDashboard = () => new Promise(res => {
+                const check = () => {
+                    if (window.firebaseDashboard) return res(window.firebaseDashboard);
+                    setTimeout(check, 300);
+                };
+                check();
+            });
+
+            (async () => {
+                const db = await waitForDashboard();
+
+                function formatStatus(className) {
+                    return className ? className : '';
+                }
+
+                function updateStatCards() {
+                    const devices = db.getDevices() || [];
+
+                    // Aggregation helpers per metric
+                    let moistureSum = 0, moistureCount = 0;
+                    let tempSum = 0, tempCount = 0;
+                    let phSum = 0, phCount = 0;
+                    let nSum = 0, pSum = 0, kSum = 0, nutCount = 0;
+
+                    devices.forEach(d => {
+                        const s = d.sensorData || {};
+                        if (s.moisture !== undefined && s.moisture !== null) { moistureSum += Number(s.moisture); moistureCount++; }
+                        if (s.temperature !== undefined && s.temperature !== null) { tempSum += Number(s.temperature); tempCount++; }
+                        if (s.ph !== undefined && s.ph !== null) { phSum += Number(s.ph); phCount++; }
+                        if (s.n !== undefined && s.p !== undefined && s.k !== undefined) { nSum += Number(s.n); pSum += Number(s.p); kSum += Number(s.k); nutCount++; }
+                    });
+
+                    // Locate cards by icon
+                    const statCards = document.querySelectorAll('.stat-card');
+                    statCards.forEach(card => {
+                        const icon = card.querySelector('.stat-icon i');
+                        const valueEl = card.querySelector('h3');
+                        const changeEl = card.querySelector('.stat-change');
+                        if (!icon || !valueEl) return;
+
+                        // Moisture
+                        if (icon.classList.contains('fa-tint')) {
+                            if (moistureCount > 0) {
+                                const avg = Math.round(moistureSum / moistureCount);
+                                valueEl.textContent = `${avg}%`;
+                                if (changeEl) { changeEl.textContent = avg >= 50 ? 'Optimal' : (avg >= 30 ? 'Warning' : 'Critical'); changeEl.className = `stat-change ${avg >= 50 ? 'positive' : (avg >=30 ? 'warning' : 'negative')}`; }
+                            } else {
+                                valueEl.textContent = '--'; if (changeEl) { changeEl.textContent = 'No Data'; changeEl.className = 'stat-change'; }
+                            }
+                        }
+
+                        // Temperature
+                        if (icon.classList.contains('fa-thermometer-half')) {
+                            if (tempCount > 0) {
+                                const avg = Math.round(tempSum / tempCount);
+                                valueEl.textContent = `${avg}°C`;
+                                if (changeEl) { changeEl.textContent = (avg >= 20 && avg <= 35) ? 'Ideal' : 'Extreme'; changeEl.className = `stat-change ${ (avg >=20 && avg <=35) ? 'positive' : 'negative' }`; }
+                            } else {
+                                valueEl.textContent = '--'; if (changeEl) { changeEl.textContent = 'No Data'; changeEl.className = 'stat-change'; }
+                            }
+                        }
+
+                        // pH
+                        if (icon.classList.contains('fa-chart-line')) {
+                            if (phCount > 0) {
+                                const avgPh = phSum / phCount;
+                                valueEl.textContent = `pH ${avgPh.toFixed(1)}`;
+                                if (changeEl) {
+                                    let status = 'Optimal'; let cls = 'positive';
+                                    if (avgPh < 6.0) { status = 'Acidic'; cls = 'warning'; }
+                                    else if (avgPh > 7.5) { status = 'Alkaline'; cls = 'warning'; }
+                                    changeEl.textContent = status;
+                                    changeEl.className = `stat-change ${cls}`;
+                                }
+                            } else {
+                                valueEl.textContent = '--'; if (changeEl) { changeEl.textContent = 'No Data'; changeEl.className = 'stat-change'; }
+                            }
+                        }
+
+                        // Plant Nutrients (N/P/K)
+                        if (icon.classList.contains('fa-seedling')) {
+                            if (nutCount > 0) {
+                                const avgN = Math.round(nSum / nutCount);
+                                const avgP = Math.round(pSum / nutCount);
+                                const avgK = Math.round(kSum / nutCount);
+                                valueEl.textContent = `N:${avgN} P:${avgP} K:${avgK}`;
+                                if (changeEl) {
+                                    // Simple heuristic: check if averages are above minimal thresholds
+                                    const lowFlags = [avgN < 10, avgP < 5, avgK < 5].filter(Boolean).length;
+                                    if (lowFlags === 0) { changeEl.textContent = 'Good'; changeEl.className = 'stat-change positive'; }
+                                    else if (lowFlags === 1) { changeEl.textContent = 'Moderate'; changeEl.className = 'stat-change warning'; }
+                                    else { changeEl.textContent = 'Low'; changeEl.className = 'stat-change negative'; }
+                                }
+                            } else {
+                                valueEl.textContent = '--'; if (changeEl) { changeEl.textContent = 'No Data'; changeEl.className = 'stat-change'; }
+                            }
+                        }
+                    });
+                }
+
+                // Initial update and subscribe to live updates
+                updateStatCards();
+                db.onUpdate(updateStatCards);
+            })();
         });
     </script>
     <!-- Auth scripts - load in order: service, protection, sync, UI updates -->

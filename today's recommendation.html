@@ -82,9 +82,9 @@
                         <i class="fas fa-bell"></i>
                         <span class="badge">2</span>
                     </div>
-                    <div class="user-profile">
-                        <img src="assets/ทุเรียน1-1024x1024.png" alt="User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                        <span>Durian Farmer</span>
+                  <div class="user-profile">
+                        <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
+                        <span>John Durian</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
@@ -107,7 +107,7 @@
                             </div>
                             Soil Moisture
                         </h3>
-                        <div class="recommendation-value">65%</div>
+                        <div class="recommendation-value">Light Watering</div>
                         <div class="recommendation-description">
                             Your soil moisture is optimal. Consider light watering in the evening to maintain current levels.
                         </div>
@@ -129,52 +129,26 @@
                     <div class="recommendation-card">
                         <h3>
                             <div class="icon">
-                                <i class="fas fa-seedling"></i>
-                            </div>
-                            Fertilizer
-                        </h3>
-                        <div class="recommendation-value">Due</div>
-                        <div class="recommendation-description">
-                            Time to apply organic fertilizer. Use nitrogen-rich compost to boost growth during this season.
-                        </div>
-                    </div>
-
-                    <div class="recommendation-card">
-                        <h3>
-                            <div class="icon">
-                                <i class="fas fa-bug"></i>
-                            </div>
-                            Rainfall
-                        </h3>
-                        <div class="recommendation-value">20mm</div>
-                        <div class="recommendation-description">
-                            Current conditions show low pest activity. Continue regular monitoring and preventive measures.
-                        </div>
-                    </div>
-
-                    <div class="recommendation-card">
-                        <h3>
-                            <div class="icon">
-                                <i class="fas fa-sun"></i>
-                            </div>
-                            Wind
-                        </h3>
-                        <div class="recommendation-value">15 km/h</div>
-                        <div class="recommendation-description">
-                            Moderate wind speed. Ensure proper canopy management to maintain optimal light distribution.
-                        </div>
-                    </div>
-
-                    <div class="recommendation-card">
-                        <h3>
-                            <div class="icon">
                                 <i class="fas fa-chart-line"></i>
                             </div>
                             pH
                         </h3>
-                        <div class="recommendation-value">6.0</div>
+                        <div class="recommendation-value">Apply Lime!</div>
                         <div class="recommendation-description">
-                            pH is optimal for durian growth. Monitor for any sudden changes that might affect fruit development.
+                            pH is low. Risk of disease is high. Apply Agricultural Lime and re-test soil in 30 days                      </div>
+                    </div>
+
+                    <!-- New Plant Nutrients card -->
+                    <div class="recommendation-card">
+                        <h3>
+                            <div class="icon">
+                                <i class="fas fa-seedling"></i>
+                            </div>
+                            Plant Nutrients
+                        </h3>
+                        <div class="recommendation-value">--</div>
+                        <div class="recommendation-description">
+                            No nutrient data yet. When available, recommendations for N/P/K will appear here.
                         </div>
                     </div>
                 </div>
@@ -222,6 +196,9 @@
     </div>
 
     <!-- JavaScript -->
+    <!-- Firebase config & dashboard (required for sensor updates) -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/firebase-dashboard.js"></script>
     <script>
         // Mobile menu toggle
         document.querySelector('.menu-toggle').addEventListener('click', function() {
@@ -253,8 +230,130 @@
                 });
             });
         });
+        
+        // Wait for Firebase dashboard and update recommendation cards with live sensor values
+        document.addEventListener('DOMContentLoaded', () => {
+  const waitForDashboard = () => new Promise(res => {
+    const check = () => {
+      if (window.firebaseDashboard) return res(window.firebaseDashboard);
+      setTimeout(check, 300);
+    };
+    check();
+  });
+
+  (async () => {
+    const db = await waitForDashboard();
+
+    // Map icon classes to updater functions
+    function updateRecommendationCards() {
+      const devices = db.getDevices();
+      const sensor = devices.length ? devices[0].sensorData : null;
+
+      const cards = document.querySelectorAll('.recommendation-card');
+      cards.forEach(card => {
+        const icon = card.querySelector('.icon i');
+        const valueEl = card.querySelector('.recommendation-value');
+        const descEl = card.querySelector('.recommendation-description');
+        if (!icon || !valueEl) return;
+
+        // Soil moisture (fa-tint)
+        if (icon.classList.contains('fa-tint')) {
+          const text = (sensor && sensor.moisture !== undefined && sensor.moisture !== null)
+            ? `${Math.round(sensor.moisture)}%`
+            : 'No Data';
+          valueEl.textContent = text;
+
+          // update description based on moisture level
+          if (descEl) {
+            if (!sensor || sensor.moisture === undefined || sensor.moisture === null) {
+              descEl.textContent = 'No soil moisture data available.';
+            } else {
+              const m = Number(sensor.moisture);
+              if (m < 30) {
+                descEl.textContent = 'Soil moisture is very low. Initiate deep watering (4-6 hours) immediately to protect trees.';
+              } else if (m < 50) {
+                descEl.textContent = 'Soil moisture is below optimal. Schedule a longer irrigation cycle (2-3 hours) this evening.';
+              } else if (m <= 70) {
+                descEl.textContent = 'Soil moisture is within the optimal range. Light watering may be applied if needed.';
+              } else {
+                descEl.textContent = 'Soil is saturated. Pause irrigation and check drainage.';
+              }
+            }
+          }
+
+          return;
+        }
+
+        // Temperature (fa-thermometer-half)
+        if (icon.classList.contains('fa-thermometer-half')) {
+          const text = (sensor && sensor.temperature !== undefined && sensor.temperature !== null)
+            ? `${Math.round(sensor.temperature)}°C`
+            : 'No Data';
+          valueEl.textContent = text;
+          return;
+        }
+
+        // pH / analytics (fa-chart-line)
+        if (icon.classList.contains('fa-chart-line')) {
+          const ph = sensor && (sensor.ph !== undefined && sensor.ph !== null) ? Number(sensor.ph) : null;
+          valueEl.textContent = ph !== null && !Number.isNaN(ph) ? `pH ${ph.toFixed(1)}` : 'No Data';
+
+          // update pH description when available
+          if (descEl) {
+            if (ph === null) {
+              descEl.textContent = 'No pH data available.';
+            } else if (ph < 6.0) {
+              descEl.textContent = 'Soil pH is acidic. Apply agricultural lime and re-test in 30 days.';
+            } else if (ph > 7.5) {
+              descEl.textContent = 'Soil pH is alkaline. Apply sulfur or acidifying amendments as recommended.';
+            } else {
+              descEl.textContent = 'Soil pH is within the optimal range for durian.';
+            }
+          }
+
+          return;
+        }
+
+        // Plant Nutrients (fa-seedling)
+        if (icon.classList.contains('fa-seedling')) {
+          if (sensor && sensor.n !== undefined && sensor.p !== undefined && sensor.k !== undefined) {
+            const n = Math.round(Number(sensor.n));
+            const p = Math.round(Number(sensor.p));
+            const k = Math.round(Number(sensor.k));
+            valueEl.textContent = `N:${n} P:${p} K:${k}`;
+
+            if (descEl) {
+              const low = [];
+              if (n < 10) low.push('N');
+              if (p < 5) low.push('P');
+              if (k < 5) low.push('K');
+
+              if (low.length === 0) {
+                descEl.textContent = 'Nutrient levels are adequate. Maintain current fertilization schedule.';
+              } else {
+                descEl.textContent = `Low in ${low.join(', ')}. Apply balanced fertilizer or targeted supplements.`;
+              }
+            }
+          } else {
+            valueEl.textContent = 'No Data';
+            if (descEl) descEl.textContent = 'No nutrient readings available.';
+          }
+          return;
+        }
+
+        // Fallback: do not change other cards
+      });
+    }
+
+    // Initial update and register for live updates
+    updateRecommendationCards();
+    db.onUpdate(updateRecommendationCards);
+  })();
+});
     </script>
+    
     <!-- Auth scripts - load in order: service, protection, UI updates -->
+     
     <script src="js/auth-service.js"></script>
     <script src="js/route-protection.js"></script>
     <script src="js/auth-check.js"></script>

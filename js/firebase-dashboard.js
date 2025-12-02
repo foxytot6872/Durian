@@ -18,7 +18,7 @@ class FirebaseDashboardManager {
 
     async init() {
         console.log('🔥 Initializing Firebase Dashboard Manager...');
-        
+
         // Wait for authentication
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -60,7 +60,7 @@ class FirebaseDashboardManager {
             }
 
             const devicesData = await response.json();
-            
+
             if (!devicesData) {
                 console.log('📭 No devices found');
                 return;
@@ -104,7 +104,7 @@ class FirebaseDashboardManager {
             sensorData: null,
             cameraFeeds: null // For Pi devices
         });
-        
+
         // Load camera feeds for Pi devices
         if (deviceType === 'camera_server') {
             this.loadCameraFeeds(deviceId);
@@ -134,7 +134,7 @@ class FirebaseDashboardManager {
             // Store cleanup function
             this.sensorListeners.set(deviceId, () => clearInterval(pollInterval));
         }
-        
+
         // Setup real-time listener for camera feeds (Pi devices only)
         if (deviceType === 'camera_server') {
             const pollInterval = setInterval(async () => {
@@ -147,7 +147,7 @@ class FirebaseDashboardManager {
 
         console.log(`✅ Listener setup for device: ${deviceId} (${deviceInfo.name}) - Type: ${deviceType}`);
     }
-    
+
     /**
      * Load camera feeds for a Pi device
      * Path: /users/<uid>/devices/<deviceId>/camera_feeds/
@@ -222,11 +222,11 @@ class FirebaseDashboardManager {
     updateDashboard() {
         // Group devices by zone (include all devices, even without sensor data)
         const devicesByZone = new Map();
-        
+
         for (const [deviceId, device] of this.devices.entries()) {
             const zone = device.zone;
             if (!zone) continue; // Skip devices without zone assignment
-            
+
             if (!devicesByZone.has(zone)) {
                 devicesByZone.set(zone, []);
             }
@@ -277,7 +277,7 @@ class FirebaseDashboardManager {
                         changeElement.className = `stat-change ${avgMoisture >= 50 ? 'positive' : 'negative'}`;
                     }
                 }
-                
+
                 // Update temperature card
                 if (icon && icon.classList.contains('fa-thermometer-half')) {
                     const valueElement = card.querySelector('h3');
