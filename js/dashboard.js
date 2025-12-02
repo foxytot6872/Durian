@@ -100,7 +100,7 @@ class FarmDashboard {
                     <td>${activity.time}</td>
             </tr>
         `).join('');
-    }
+        }
     }
 
     initFarmCharts() {
@@ -200,7 +200,7 @@ class FarmDashboard {
         // Real-time updates are now handled by Firebase Dashboard Manager
         // This method is kept for compatibility but Firebase handles updates
         console.log('📊 Real-time updates handled by Firebase Dashboard Manager');
-        
+
         // Check if Firebase Dashboard Manager is available
         if (window.firebaseDashboard) {
             console.log('✅ Firebase Dashboard Manager connected');
@@ -274,7 +274,7 @@ class FarmDashboard {
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const farmDashboard = new FarmDashboard();
-    
+
     // Add event listener for weather period selection
     const weatherPeriodSelect = document.getElementById('weatherPeriod');
     if (weatherPeriodSelect) {
