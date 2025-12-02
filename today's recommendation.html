@@ -153,6 +153,33 @@
                     </div>
                 </div>
 
+               
+
+                <!-- Reminders Section (simplified, updated) -->
+                <div class="reminders-section" style="margin: 1.5rem 0; padding: 1rem; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+                        <h3 style="margin:0;">Upcoming Reminders</h3>
+                        <div style="display:flex; gap:0.5rem;">
+                            <a href="reminders-archive.html" class="btn-secondary" style="padding:0.45rem 0.75rem; border-radius:6px; text-decoration:none;">View Archive</a>
+                            <button id="addReminderBtn" class="btn-primary" style="padding:0.45rem 0.75rem; border-radius:6px;">Add Reminder</button>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
+                      <div style="flex:1; min-width:260px;">
+                        <h4 style="margin:0 0 0.5rem 0;">This Week</h4>
+                        <div id="remindersWeek" style="color:#334155; background:#f8fafc; padding:0.5rem; border-radius:6px; min-height:40px;">
+                          <p style="margin:0; color:#64748b;">No reminders for this week.</p>
+                        </div>
+                      </div>
+                      <div style="flex:1; min-width:260px;">
+                        <h4 style="margin:0 0 0.5rem 0;">This Month</h4>
+                        <div id="remindersMonth" style="color:#334155; background:#f8fafc; padding:0.5rem; border-radius:6px; min-height:40px;">
+                          <p style="margin:0; color:#64748b;">No reminders for this month.</p>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+
                 <!-- Weather Section -->
                 <div class="weather-section">
                     <div class="weather-header">
@@ -378,5 +405,343 @@
     <script src="js/auth-service.js"></script>
     <script src="js/route-protection.js"></script>
     <script src="js/auth-check.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+
+        // Debug navigation issues
+        document.addEventListener('DOMContentLoaded', function() {
+            // Debug navigation links
+            const navLinks = document.querySelectorAll('.nav-link');
+            console.log('Found', navLinks.length, 'navigation links');
+            
+            navLinks.forEach((link, index) => {
+                console.log(`Link ${index}:`, link.href, link.textContent.trim());
+                
+                link.addEventListener('click', function(e) {
+                    console.log('Link clicked:', this.href);
+                    console.log('Event target:', e.target);
+                    console.log('Event currentTarget:', e.currentTarget);
+                    
+                    // Check if the link has a valid href
+                    if (this.href && this.href !== '#' && !this.href.includes('#')) {
+                        console.log('Navigating to:', this.href);
+                        // Force navigation
+                        window.location.href = this.href;
+                    } else {
+                        console.log('Invalid or hash link:', this.href);
+                    }
+                });
+            });
+        });
+        
+        // Wait for Firebase dashboard and update recommendation cards with live sensor values
+        document.addEventListener('DOMContentLoaded', () => {
+  const waitForDashboard = () => new Promise(res => {
+    const check = () => {
+      if (window.firebaseDashboard) return res(window.firebaseDashboard);
+      setTimeout(check, 300);
+    };
+    check();
+  });
+
+  (async () => {
+    const db = await waitForDashboard();
+
+    // Map icon classes to updater functions
+    function updateRecommendationCards() {
+      const devices = db.getDevices();
+      const sensor = devices.length ? devices[0].sensorData : null;
+
+      const cards = document.querySelectorAll('.recommendation-card');
+      cards.forEach(card => {
+        const icon = card.querySelector('.icon i');
+        const valueEl = card.querySelector('.recommendation-value');
+        const descEl = card.querySelector('.recommendation-description');
+        if (!icon || !valueEl) return;
+
+        // Soil moisture (fa-tint)
+        if (icon.classList.contains('fa-tint')) {
+          const text = (sensor && sensor.moisture !== undefined && sensor.moisture !== null)
+            ? `${Math.round(sensor.moisture)}%`
+            : 'Loading';
+          valueEl.textContent = text;
+
+          // update description based on moisture level
+          if (descEl) {
+            if (!sensor || sensor.moisture === undefined || sensor.moisture === null) {
+              descEl.textContent = 'No soil moisture data available.';
+            } else {
+              const m = Number(sensor.moisture);
+              if (m < 30) {
+                descEl.textContent = 'Soil moisture is very low. Initiate deep watering (4-6 hours) immediately to protect trees.';
+              } else if (m < 50) {
+                descEl.textContent = 'Soil moisture is below optimal. Schedule a longer irrigation cycle (2-3 hours) this evening.';
+              } else if (m <= 70) {
+                descEl.textContent = 'Soil moisture is within the optimal range. Light watering may be applied if needed.';
+              } else {
+                descEl.textContent = 'Soil is saturated. Pause irrigation and check drainage.';
+              }
+            }
+          }
+
+          return;
+        }
+
+        // Temperature (fa-thermometer-half)
+        if (icon.classList.contains('fa-thermometer-half')) {
+          const text = (sensor && sensor.temperature !== undefined && sensor.temperature !== null)
+            ? `${Math.round(sensor.temperature)}°C`
+            : 'Loading';
+          valueEl.textContent = text;
+
+          // update temperature description and actionable advice
+          if (descEl) {
+            if (!sensor || sensor.temperature === undefined || sensor.temperature === null) {
+              descEl.textContent = 'No temperature data available.';
+            } else {
+              const t = Number(sensor.temperature);
+              if (t < 15) {
+                descEl.textContent = 'Very cold. Protect young trees from frost and avoid irrigation during freezing conditions.';
+              } else if (t < 20) {
+                descEl.textContent = 'Cool temperatures. Monitor for slowed growth and delay heavy fertilization.';
+              } else if (t <= 30) {
+                descEl.textContent = 'Temperature is optimal for durian growth. Maintain regular monitoring.';
+              } else if (t <= 35) {
+                descEl.textContent = 'Warm conditions. Increase irrigation frequency slightly and provide temporary shade if possible.';
+              } else {
+                descEl.textContent = 'Heat stress risk. Provide shade, increase irrigation, and monitor trees closely for wilting.';
+              }
+            }
+          }
+
+          return;
+        }
+
+        // pH / analytics (fa-chart-line)
+        if (icon.classList.contains('fa-chart-line')) {
+          const ph = sensor && (sensor.ph !== undefined && sensor.ph !== null) ? Number(sensor.ph) : null;
+          valueEl.textContent = ph !== null && !Number.isNaN(ph) ? `pH ${ph.toFixed(1)}` : 'Loading';
+
+          // update pH description when available
+          if (descEl) {
+            if (ph === null) {
+              descEl.textContent = 'No pH data available.';
+            } else if (ph < 6.0) {
+              descEl.textContent = 'Soil pH is acidic. Apply agricultural lime and re-test in 30 days.';
+            } else if (ph > 7.5) {
+              descEl.textContent = 'Soil pH is alkaline. Apply sulfur or acidifying amendments as recommended.';
+            } else {
+              descEl.textContent = 'Soil pH is within the optimal range for durian.';
+            }
+          }
+
+          return;
+        }
+
+        // Plant Nutrients (fa-seedling)
+        if (icon.classList.contains('fa-seedling')) {
+          if (sensor && sensor.n !== undefined && sensor.p !== undefined && sensor.k !== undefined) {
+            const n = Math.round(Number(sensor.n));
+            const p = Math.round(Number(sensor.p));
+            const k = Math.round(Number(sensor.k));
+            valueEl.textContent = `N:${n} P:${p} K:${k}`;
+
+            if (descEl) {
+              const low = [];
+              if (n < 10) low.push('N');
+              if (p < 5) low.push('P');
+              if (k < 5) low.push('K');
+
+              if (low.length === 0) {
+                descEl.textContent = 'Nutrient levels are adequate. Maintain current fertilization schedule.';
+              } else {
+                descEl.textContent = `Low in ${low.join(', ')}. Apply balanced fertilizer or targeted supplements.`;
+              }
+            }
+          } else {
+            valueEl.textContent = 'Loading';
+            if (descEl) descEl.textContent = 'No nutrient readings available.';
+          }
+          return;
+        }
+
+        // Fallback: do not change other cards
+      });
+    }
+
+    // Initial update and register for live updates
+    updateRecommendationCards();
+    db.onUpdate(updateRecommendationCards);
+  })();
+});
+    </script>
+    
+    <!-- Reminders: local storage - updated actions (done, archive, delete) -->
+    <script>
+    (function() {
+      const STORAGE_KEY = 'farmReminders';
+      const ARCHIVE_KEY = 'farmRemindersArchived';
+
+      function loadReminders() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          console.warn('Failed to parse reminders:', e);
+          return [];
+        }
+      }
+
+      function saveReminders(list) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      }
+
+      function loadArchive() {
+        try {
+          const raw = localStorage.getItem(ARCHIVE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function saveArchive(list) {
+        localStorage.setItem(ARCHIVE_KEY, JSON.stringify(list));
+      }
+
+      function formatDateTimeLocal(dtStr) {
+        const d = new Date(dtStr);
+        return d.toLocaleString();
+      }
+
+      function escapeHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function renderList(items, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (!items.length) {
+          container.innerHTML = '<p style="margin:0; color:#64748b;">No reminders.</p>';
+          return;
+        }
+
+        container.innerHTML = items.map(r => {
+          const dt = formatDateTimeLocal(r.datetime);
+          const title = escapeHtml(r.title || 'Reminder');
+          const notes = escapeHtml(r.notes || '');
+          const doneClass = r.done ? 'opacity:0.6;text-decoration:line-through;' : '';
+          return `
+            <div class="reminder-item" data-id="${r.id}" style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #e6eef6;">
+              <div style="flex:1; ${doneClass}">
+                <div style="font-weight:600;color:#0f172a;">${title}</div>
+                <div style="font-size:0.9rem;color:#475569;">${dt}</div>
+                <div style="font-size:0.9rem;color:#64748b;margin-top:0.25rem;">${notes}</div>
+              </div>
+              <div style="display:flex;gap:0.35rem;margin-left:1rem">
+                <a href="#" class="btn-secondary action-done" data-id="${r.id}" title="Mark Done" style="padding:0.35rem 0.6rem;border-radius:6px;text-decoration:none;">Done</a>
+                <a href="#" class="btn-secondary action-archive" data-id="${r.id}" title="Archive" style="padding:0.35rem 0.6rem;border-radius:6px;text-decoration:none;">Archive</a>
+                <a href="#" class="btn-secondary action-delete" data-id="${r.id}" title="Delete" style="padding:0.35rem 0.6rem;border-radius:6px;text-decoration:none;">Remove</a>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // attach handlers
+        container.querySelectorAll('.action-done').forEach(el => {
+          el.addEventListener('click', (e) => { e.preventDefault(); const id = el.getAttribute('data-id'); toggleDone(id); });
+        });
+        container.querySelectorAll('.action-archive').forEach(el => {
+          el.addEventListener('click', (e) => { e.preventDefault(); const id = el.getAttribute('data-id'); archiveReminder(id); });
+        });
+        container.querySelectorAll('.action-delete').forEach(el => {
+          el.addEventListener('click', (e) => { e.preventDefault(); const id = el.getAttribute('data-id'); deleteReminder(id); });
+        });
+      }
+
+      function renderReminders() {
+        const list = loadReminders();
+        const now = Date.now();
+        const weekLimit = now + 7*24*60*60*1000;
+        const monthLimit = now + 30*24*60*60*1000;
+
+        const week = list.filter(r => {
+          const t = new Date(r.datetime).getTime();
+          return t >= now && t <= weekLimit;
+        }).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+
+        const month = list.filter(r => {
+          const t = new Date(r.datetime).getTime();
+          return t > weekLimit && t <= monthLimit;
+        }).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+
+        renderList(week, 'remindersWeek');
+        renderList(month, 'remindersMonth');
+      }
+
+      function addReminder(reminder) {
+        const all = loadReminders();
+        reminder.id = reminder.id || `r_${Date.now()}`;
+        reminder.done = false;
+        all.push(reminder);
+        saveReminders(all);
+        renderReminders();
+      }
+
+      function toggleDone(id) {
+        const all = loadReminders();
+        const idx = all.findIndex(r => r.id === id);
+        if (idx === -1) return;
+        all[idx].done = !all[idx].done;
+        saveReminders(all);
+        renderReminders();
+      }
+
+      function archiveReminder(id) {
+        const all = loadReminders();
+        const idx = all.findIndex(r => r.id === id);
+        if (idx === -1) return;
+        const [item] = all.splice(idx,1);
+        const arch = loadArchive();
+        item.archivedAt = new Date().toISOString();
+        arch.unshift(item);
+        saveArchive(arch);
+        saveReminders(all);
+        renderReminders();
+      }
+
+      function deleteReminder(id) {
+        const all = loadReminders();
+        const remaining = all.filter(r => r.id !== id);
+        saveReminders(remaining);
+        renderReminders();
+      }
+
+      // Add reminder prompt
+      function showAddReminderPrompt() {
+        const title = prompt('Reminder title', 'General Reminder');
+        if (!title) return;
+        const dateInput = prompt('Date and time (YYYY-MM-DD HH:MM)', new Date().toISOString().slice(0,16).replace('T',' '));
+        if (!dateInput) return;
+        const dt = new Date(dateInput.replace(' ', 'T'));
+        if (isNaN(dt.getTime())) { alert('Invalid date'); return; }
+        const notes = prompt('Notes', '');
+        addReminder({ title, datetime: dt.toISOString(), durationMinutes: 60, notes });
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const addBtn = document.getElementById('addReminderBtn');
+        if (addBtn) addBtn.addEventListener('click', showAddReminderPrompt);
+        renderReminders();
+      });
+
+      // expose for debug
+      window._reminderHelpers = { loadReminders, loadArchive };
+    })();
+    </script>
 </body>
 </html>
