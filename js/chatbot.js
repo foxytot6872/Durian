@@ -8,7 +8,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatbotInput = document.getElementById('chatbotInput');
     const chatbotSend = document.getElementById('chatbotSend');
     const chatbotMessages = document.getElementById('chatbotMessages');
-    const chatbotApiUrl = window.CHATBOT_API_URL || 'https://duriancam.duckdns.org/api/chat';
+    const isLocalEnvironment = /^file:|^http:\/\/localhost|^http:\/\/127\.0\.0\.1/i.test(window.location.href);
+
+    function normalizeCandidateUrl(url) {
+        return (url || '').trim().replace(/\/$/, '');
+    }
+
+    function deriveFirebaseFunctionUrl() {
+        const region = (window.CHATBOT_FUNCTION_REGION || 'us-central1').trim();
+        const hostname = (window.location.hostname || '').toLowerCase();
+        const firebaseHostMatch = hostname.match(/^([a-z0-9-]+)\.(web\.app|firebaseapp\.com)$/);
+
+        if (!firebaseHostMatch) {
+            return '';
+        }
+
+        const projectId = firebaseHostMatch[1];
+        return `https://${region}-${projectId}.cloudfunctions.net/chatbot`;
+    }
+
+    function buildApiCandidates() {
+        const configuredApiUrl = normalizeCandidateUrl(window.CHATBOT_API_URL);
+        const configuredFunctionUrl = normalizeCandidateUrl(window.CHATBOT_FUNCTION_URL);
+        const derivedFunctionUrl = normalizeCandidateUrl(deriveFirebaseFunctionUrl());
+        const candidates = [];
+
+        if (configuredApiUrl) {
+            candidates.push(configuredApiUrl);
+        }
+
+        if (isLocalEnvironment) {
+            candidates.push('http://localhost:8000/api/chat');
+        } else {
+            candidates.push('/api/chat');
+        }
+
+        if (configuredFunctionUrl) {
+            candidates.push(configuredFunctionUrl);
+        }
+
+        if (derivedFunctionUrl) {
+            candidates.push(derivedFunctionUrl);
+        }
+
+        return [...new Set(candidates.filter(Boolean))];
+    }
+
+    const chatbotApiCandidates = buildApiCandidates();
 
     // Track chat window state
     let isOpen = false;
@@ -16,39 +62,69 @@ document.addEventListener('DOMContentLoaded', function() {
     const maxHistoryMessages = 12;
 
     async function postToChatbotApi(message, controller) {
-        const response = await fetch(chatbotApiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message,
-                history: conversationHistory
-            }),
-            signal: controller.signal
-        });
-
-        if (!response.ok) {
-            let errorMessage = `HTTP ${response.status}`;
-
-            try {
-                const errorData = await response.json();
-                if (errorData.error && errorData.details && errorData.details !== errorData.error) {
-                    errorMessage = `${errorData.error} ${errorData.details}`;
-                } else {
-                    errorMessage = errorData.error || errorData.details || errorMessage;
-                }
-            } catch (_) {
-                const errorText = await response.text();
-                if (errorText) {
-                    errorMessage = errorText;
-                }
-            }
-
-            throw new Error(errorMessage);
+        if (chatbotApiCandidates.length === 0) {
+            throw new Error('Set window.CHATBOT_API_URL or window.CHATBOT_FUNCTION_URL in index.html to your public chatbot endpoint.');
         }
 
-        return response;
+        let lastError;
+
+        for (const apiUrl of chatbotApiCandidates) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message,
+                        history: conversationHistory
+                    }),
+                    signal: controller.signal
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+
+                    const rawBody = await response.text();
+                    if (rawBody) {
+                        try {
+                            const errorData = JSON.parse(rawBody);
+                            if (errorData.error && errorData.details && errorData.details !== errorData.error) {
+                                errorMessage = `${errorData.error} ${errorData.details}`;
+                            } else {
+                                errorMessage = errorData.error || errorData.details || rawBody;
+                            }
+                        } catch (_) {
+                            errorMessage = rawBody;
+                        }
+                    }
+
+                    const httpError = new Error(`${errorMessage} (${apiUrl})`);
+                    httpError.isHttpError = true;
+                    throw httpError;
+                }
+
+                return response;
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    throw new Error('Chatbot request timed out. Please try again.');
+                }
+
+                // If the endpoint responded with an HTTP error, surface it directly.
+                // Fallback endpoints are only for network reachability failures.
+                if (error && error.isHttpError) {
+                    throw error;
+                }
+
+                lastError = error;
+            }
+        }
+
+        if (lastError && lastError.message) {
+            throw lastError;
+        }
+
+        throw new Error('The chatbot API is not reachable. Check your endpoint configuration.');
     }
 
     /**
@@ -155,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             const fallback = error && error.message
                 ? error.message
-                : 'The chatbot API is not reachable. Make sure the backend is running at https://duriancam.duckdns.org/api/chat';
+                : 'The chatbot API is not reachable. Set CHATBOT_API_URL or CHATBOT_FUNCTION_URL in index.html.';
             updateTypingMessage(typingMessage, fallback);
             pushHistory('assistant', fallback);
         } finally {

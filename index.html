@@ -415,6 +415,16 @@
     <script type="module" src="js/auth-sync.js"></script>
     <script src="js/auth-check.js"></script>
     <!-- Chatbot Script -->
-    <script src="js/chatbot.js"></script>
+    <script>
+        // Local development uses the Python API; production uses Firebase Functions.
+        const isLocalhost = /^file:|^http:\/\/localhost|^http:\/\/127\.0\.0\.1/i.test(window.location.href);
+        window.CHATBOT_API_URL = window.CHATBOT_API_URL || (
+            isLocalhost
+                ? 'http://localhost:8000/api/chat'
+                : 'https://us-central1-testing-151e6.cloudfunctions.net/chatbot'
+        );
+        window.CHATBOT_FUNCTION_URL = window.CHATBOT_FUNCTION_URL || 'https://us-central1-testing-151e6.cloudfunctions.net/chatbot';
+    </script>
+    <script src="js/chatbot.js?v=20260516-3"></script>
 </body>
 </html>

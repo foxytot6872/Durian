@@ -21,17 +21,17 @@ PORT = int(os.getenv("CHATBOT_API_PORT", "8000"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
 MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "openai").strip().lower()
+ENABLE_GEMINI = os.getenv("ENABLE_GEMINI", "false").strip().lower() in {"1", "true", "yes", "on"}
+USE_GEMINI = ENABLE_GEMINI and MODEL_PROVIDER in ("gemini", "google")
 
 # Optional Google AI Studio / Gemini support
 GENAI_MODEL = os.getenv("GENAI_MODEL", "gemini-2.0-flash")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai = None
-if MODEL_PROVIDER in ("gemini", "google"):
+if USE_GEMINI:
     try:
-        import google.generativeai as gen
-
-        gen.configure(api_key=GOOGLE_API_KEY)
-        genai = gen
+        from google import genai as genai_client
+        genai = genai_client.Client(api_key=GOOGLE_API_KEY)
     except Exception:
         genai = None
 
@@ -42,7 +42,7 @@ SYSTEM_PROMPT = (
 
 # Only initialize OpenAI if we're using OpenAI (not Gemini)
 llm = None
-if MODEL_PROVIDER == "openai":
+if not USE_GEMINI:
     llm = ChatOpenAI(model=MODEL, temperature=TEMPERATURE)
 
 
@@ -55,7 +55,7 @@ def _normalize_error_message(error: Exception) -> tuple[int, str]:
         or "429" in error_text
         or "resource_exhausted" in error_text
     ):
-        if MODEL_PROVIDER in ("gemini", "google"):
+        if USE_GEMINI:
             return 429, "Gemini API quota/rate limit reached. Check Google AI Studio usage/billing and retry."
         return 429, "OpenAI API quota/rate limit reached. Check usage/billing and retry."
 
@@ -65,7 +65,7 @@ def _normalize_error_message(error: Exception) -> tuple[int, str]:
         or "incorrect api key provided" in error_text
         or "401" in error_text
     ):
-        if MODEL_PROVIDER in ("gemini", "google"):
+        if USE_GEMINI:
             return 401, "GOOGLE_API_KEY in .env is missing or invalid."
         return 401, "OPENAI_API_KEY in .env is missing or invalid."
 
@@ -138,9 +138,13 @@ class ChatbotHandler(BaseHTTPRequestHandler):
 
         try:
             # Branch between OpenAI (LangChain) or Google Generative AI (Gemini)
-            if MODEL_PROVIDER in ("gemini", "google") and genai is not None:
-                model = genai.GenerativeModel(GENAI_MODEL)
-                resp = model.generate_content(message)
+            if USE_GEMINI:
+                if genai is None:
+                    raise RuntimeError("Gemini is enabled but google-genai is not available or GOOGLE_API_KEY is missing.")
+                resp = genai.models.generate_content(
+                    model=GENAI_MODEL,
+                    contents=message,
+                )
                 reply = (resp.text or "").strip() if resp else ""
             else:
                 if llm is None:

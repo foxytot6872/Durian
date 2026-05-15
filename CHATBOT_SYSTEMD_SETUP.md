@@ -41,6 +41,7 @@ OPENAI_TEMPERATURE=0.7
 If you use Gemini instead of OpenAI:
 
 ```bash
+ENABLE_GEMINI=true
 MODEL_PROVIDER=gemini
 GOOGLE_API_KEY=your_google_api_key_here
 GENAI_MODEL=gemini-2.0-flash

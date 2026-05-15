@@ -18,3 +18,6 @@ if google_key:
     print('GOOGLE_API_KEY found (length={}): {}'.format(len(google_key), google_key[:4] + '...' if len(google_key) > 8 else google_key))
 else:
     print('GOOGLE_API_KEY not set (only required if MODEL_PROVIDER=gemini).')
+
+enable_gemini = os.getenv('ENABLE_GEMINI', '').strip().lower() in ('1', 'true', 'yes', 'on')
+print('ENABLE_GEMINI={}'.format(enable_gemini))

@@ -66,15 +66,16 @@ Using Google AI Studio / Gemini
 - Install the client (quick option):
 
 ```bash
-D:/python.exe -m pip install google-generativeai
+D:/python.exe -m pip install google-genai
 ```
 
 - Add these to your `.env` to use Gemini instead of OpenAI:
 
 ```
+ENABLE_GEMINI=true
 MODEL_PROVIDER=gemini
 GOOGLE_API_KEY=your_google_api_key_here
 GENAI_MODEL=text-bison-001
 ```
 
-The local proxy will pick up `MODEL_PROVIDER` and route requests to Google if set to `gemini`.
+The local proxy only uses Gemini when `ENABLE_GEMINI=true`.
