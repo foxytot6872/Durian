@@ -9,9 +9,9 @@
  * Architecture:
  * - Device Registry: /device_registry/<deviceId>/
  * - User Devices: /users/<uid>/devices/<deviceId>/sensor_data/
- * 
- * See FIREBASE_RTDB_ARCHITECTURE.md for complete structure
+ * tructure
  *********************************************/
+ * See FIREBASE_RTDB_ARCHITECTURE.md for complete s
 
 // ---- WiFi Configuration ----
 #define WIFI_SSID       "Jak2.4G_"
@@ -99,22 +99,18 @@ bool read7Regs(uint16_t outRegs[7]) {
 /*********************************************
  * HTTP GET Helper
  * Returns response payload as String
- * Sets httpCode via reference to check for errors
  *********************************************/
-String httpGET(String url, int* httpCodePtr = nullptr) {
+String httpGET(String url) {
   HTTPClient http;
   
   if (!http.begin(url)) {
     Serial.println("❌ ERROR: Failed to connect to server");
-    if (httpCodePtr) *httpCodePtr = -1;
     return "";
   }
   
   int httpCode = http.GET();
   String payload = http.getString();
   http.end();
-
-  if (httpCodePtr) *httpCodePtr = httpCode;
 
   Serial.printf("[GET] %s\n", url.c_str());
   Serial.printf("HTTP Code: %d\n", httpCode);
@@ -123,9 +119,6 @@ String httpGET(String url, int* httpCodePtr = nullptr) {
     Serial.println("Response OK");
   } else {
     Serial.printf("⚠ Warning: HTTP Code %d\n", httpCode);
-    if (httpCode == 401) {
-      Serial.println("❌ PERMISSION DENIED - Check Firebase security rules!");
-    }
   }
   
   Serial.println("Payload:");
@@ -139,14 +132,12 @@ String httpGET(String url, int* httpCodePtr = nullptr) {
  * HTTP PUT Helper
  * Uploads JSON data to Firebase
  * Returns HTTP status code
- * Sets httpCode via reference to check for errors
  *********************************************/
-int httpPUT(String url, String json, int* httpCodePtr = nullptr) {
+int httpPUT(String url, String json) {
   HTTPClient http;
   
   if (!http.begin(url)) {
     Serial.println("❌ ERROR: Failed to connect to server");
-    if (httpCodePtr) *httpCodePtr = -1;
     return -1;
   }
   
@@ -154,8 +145,6 @@ int httpPUT(String url, String json, int* httpCodePtr = nullptr) {
   int httpCode = http.PUT(json);
   String payload = http.getString();
   http.end();
-
-  if (httpCodePtr) *httpCodePtr = httpCode;
 
   Serial.printf("[PUT] %s\n", url.c_str());
   Serial.printf("HTTP Code: %d\n", httpCode);
@@ -236,8 +225,7 @@ void waitForDeviceClaim() {
     url += "/device_registry/" + deviceId + ".json";
     
     Serial.printf("Attempt #%d\n", attemptCount);
-    int httpCode = 0;
-    String response = httpGET(url, &httpCode);
+    String response = httpGET(url);
     
     // Trim whitespace from response
     response.trim();
@@ -245,7 +233,7 @@ void waitForDeviceClaim() {
     // Case 1: Device doesn't exist (not claimed yet)
     if (response == "null" || response.length() == 0) {
       Serial.println("⚠ Device NOT CLAIMED");
-      Serial.println("Claim Device using ID: " + deviceId);
+      Serial.println("Claim Device using ID: " +deviceId);
       Serial.println("   → Waiting for user to claim via dashboard...");
       Serial.println("   → Retrying in 5 seconds...\n");
       delay(5000);
@@ -290,75 +278,21 @@ void waitForDeviceClaim() {
     Serial.println("=================================");
     Serial.print("Owner UID: ");
     Serial.println(ownerUid);
-    Serial.print("Device ID: ");
-    Serial.println(deviceId);
     
-    // Extract device info from registry
-    String deviceName = "";
-    String zone = "";
-    
+    // Display device info if available
     if (doc.containsKey("name")) {
-      deviceName = doc["name"].as<String>();
       Serial.print("Device Name: ");
-      Serial.println(deviceName);
+      Serial.println(doc["name"].as<String>());
     }
     if (doc.containsKey("zone")) {
-      zone = doc["zone"].as<String>();
       Serial.print("Zone: ");
-      Serial.println(zone);
+      Serial.println(doc["zone"].as<String>());
     }
-    
-    // Upload device info to Firebase (includes type: "sensor")
-    if (deviceName.length() > 0 || zone.length() > 0) {
-      uploadDeviceInfo(deviceName, zone);
-    }
-    
     Serial.println("=================================\n");
     Serial.println("✅ Ready to upload sensor data!");
     Serial.println("");
 
     break;
-  }
-}
-
-/*********************************************
- * Upload Device Info to Firebase
- * 
- * Path: /users/<ownerUid>/devices/<deviceId>/device_info/
- * 
- * Writes device metadata including type, name, zone, etc.
- * This helps identify the device type (sensor, valve, etc.)
- *********************************************/
-void uploadDeviceInfo(String deviceName, String zone) {
-  // Validate device is claimed
-  if (!deviceClaimed || ownerUid.length() == 0) {
-    Serial.println("❌ ERROR: Device not claimed. Cannot upload device info.");
-    return;
-  }
-
-  // Build path: /users/<ownerUid>/devices/<deviceId>/device_info.json
-  String path = FIREBASE_URL;
-  path += "/users/" + ownerUid + "/devices/" + deviceId + "/device_info.json";
-
-  // Build JSON payload
-  String json = "{";
-  json += "\"device_id\":\"" + deviceId + "\",";
-  json += "\"type\":\"sensor\",";  // Device type: sensor
-  json += "\"name\":\"" + deviceName + "\",";
-  json += "\"zone\":\"" + zone + "\",";
-  json += "\"firmware_version\":\"1.0.0\",";
-  json += "\"last_online\":" + String(millis());
-  json += "}";
-
-  // Upload to Firebase
-  Serial.println("📤 Uploading device info...");
-  int httpCode = 0;
-  int result = httpPUT(path, json, &httpCode);
-  
-  if (httpCode > 0 && httpCode < 400) {
-    Serial.println("✅ Device info uploaded successfully");
-  } else {
-    Serial.printf("❌ Failed to upload device info (HTTP %d)\n", httpCode);
   }
 }
 
@@ -408,8 +342,7 @@ void uploadSensorData(float moisture, float temp, int ec, float ph, int n, int p
 
   // Upload to Firebase
   Serial.println("📤 Uploading sensor data...");
-  int httpCode = 0;
-  int result = httpPUT(path, json, &httpCode);
+  int httpCode = httpPUT(path, json);
   
   if (httpCode > 0 && httpCode < 400) {
     Serial.println("✅ Sensor data uploaded successfully");
@@ -491,12 +424,12 @@ void setup() {
 void loop() {
   // Ensure device is still claimed before uploading
   if (!deviceClaimed || ownerUid.length() == 0) {
-    Serial.println("\n⚠ Device claim lost. Re-checking...\n");
+    Serial.println("⚠ Device claim lost. Re-checking...");
     waitForDeviceClaim();
     return;
   }
 
-  uint16_t regs[7];
+ uint16_t regs[7];
   if (read7Regs(regs)) {
     // สเกลตามที่ร้านนี้ระบุ: soil/10, temp/10, pH/10; EC เป็น uS/cm ตรง ๆ; N,P,K เป็น mg/kg
     float moisture = regs[0] / 10.0f;
@@ -507,12 +440,13 @@ void loop() {
     uint16_t p = regs[5];
     uint16_t k = regs[6];
 
-    Serial.printf("📊 Sensor Data: Soil: %.1f%%  Temp: %.1f°C  EC: %u  pH: %.1f  N:%u  P:%u  K:%u\n",
+    Serial.printf("Soil: %.1f %%  Temp: %.1f C  EC: %u  pH: %.1f  N:%u  P:%u  K:%u\n",
                   moisture, temp, ec, ph, n, p, k);
     // Upload sensor data to Firebase
     uploadSensorData(moisture, temp, ec, ph, n, p, k);
   } else {
-    Serial.println("❌ Read FAIL (timeout/CRC/format)");
+    Serial.println("Read FAIL (timeout/CRC/format)");
+
   }
 
   // Wait before next upload cycle
