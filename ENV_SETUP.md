@@ -1,3 +1,16 @@
+Running the chatbot as a service on Linux
+----------------------------------------
+- Copy `chatbot-api.service` to `/etc/systemd/system/chatbot-api.service`.
+- Create `/etc/durian/chatbot-api.env` with your API keys and model settings.
+- Run:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable chatbot-api
+sudo systemctl start chatbot-api
+```
+
+The chatbot should listen on `127.0.0.1:8000`, and Nginx can proxy `/api/chat` to it.
 How to store API keys and secrets
 
 1. Create a `.env` file in the project root (next to this repo's `package.json`).

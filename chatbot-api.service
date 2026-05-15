@@ -1,0 +1,17 @@
+[Unit]
+Description=Durian Chatbot API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/durian
+ExecStart=/usr/bin/python3 /var/www/durian/chatbot_api.py
+Restart=always
+RestartSec=10
+EnvironmentFile=-/etc/durian/chatbot-api.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
