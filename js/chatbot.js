@@ -8,12 +8,95 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatbotInput = document.getElementById('chatbotInput');
     const chatbotSend = document.getElementById('chatbotSend');
     const chatbotMessages = document.getElementById('chatbotMessages');
-    const chatbotApiUrl = window.CHATBOT_API_URL || 'http://localhost:8000/api/chat';
+    const chatbotApiCandidates = getChatbotApiCandidates();
 
     // Track chat window state
     let isOpen = false;
     const conversationHistory = [];
     const maxHistoryMessages = 12;
+
+    function getChatbotApiCandidates() {
+        const configuredUrl = (window.CHATBOT_API_URL || '').trim();
+        if (configuredUrl) {
+            return [configuredUrl];
+        }
+
+        const candidates = [];
+
+        // Prefer same-origin proxy path in hosted deployments.
+        if (window.location && /^https?:$/i.test(window.location.protocol)) {
+            candidates.push('/api/chat');
+        }
+
+        // Keep localhost fallback for local development.
+        candidates.push('http://localhost:8000/api/chat');
+        return candidates;
+    }
+
+    async function postToChatbotApi(message, controller) {
+        let lastError = null;
+
+        for (let i = 0; i < chatbotApiCandidates.length; i += 1) {
+            const apiUrl = chatbotApiCandidates[i];
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message,
+                        history: conversationHistory
+                    }),
+                    signal: controller.signal
+                });
+
+                if (!response.ok) {
+                    const shouldTryNextUrl = i < chatbotApiCandidates.length - 1 && (response.status === 404 || response.status === 502 || response.status === 503);
+                    if (shouldTryNextUrl) {
+                        continue;
+                    }
+
+                    let errorMessage = `HTTP ${response.status}`;
+
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error && errorData.details && errorData.details !== errorData.error) {
+                            errorMessage = `${errorData.error} ${errorData.details}`;
+                        } else {
+                            errorMessage = errorData.error || errorData.details || errorMessage;
+                        }
+                    } catch (_) {
+                        const errorText = await response.text();
+                        if (errorText) {
+                            errorMessage = errorText;
+                        }
+                    }
+
+                    throw new Error(errorMessage);
+                }
+
+                return response;
+            } catch (error) {
+                const canRetry = i < chatbotApiCandidates.length - 1;
+                const isAbort = error && error.name === 'AbortError';
+                const isNetworkFailure = error && /failed to fetch|networkerror/i.test(String(error.message || ''));
+
+                if (isAbort) {
+                    throw error;
+                }
+
+                if (!canRetry || !isNetworkFailure) {
+                    throw error;
+                }
+
+                lastError = error;
+            }
+        }
+
+        throw lastError || new Error('Unable to reach chatbot API endpoint.');
+    }
 
     /**
      * Toggle the chatbot window open/close
@@ -107,39 +190,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const controller = new AbortController();
             timeoutId = setTimeout(() => controller.abort(), 30000);
 
-            const response = await fetch(chatbotApiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message,
-                    history: conversationHistory
-                }),
-                signal: controller.signal
-            });
+            const response = await postToChatbotApi(message, controller);
 
             clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}`;
-
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error && errorData.details && errorData.details !== errorData.error) {
-                        errorMessage = `${errorData.error} ${errorData.details}`;
-                    } else {
-                        errorMessage = errorData.error || errorData.details || errorMessage;
-                    }
-                } catch (_) {
-                    const errorText = await response.text();
-                    if (errorText) {
-                        errorMessage = errorText;
-                    }
-                }
-
-                throw new Error(errorMessage);
-            }
 
             const data = await response.json();
             const reply = data.reply || 'I could not generate a reply right now.';
@@ -147,9 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTypingMessage(typingMessage, reply);
             pushHistory('assistant', reply);
         } catch (error) {
-            const fallback = error && error.message
-                ? error.message
-                : 'The GPT backend is not reachable right now. Start `chatbot_api.py` and try again.';
+            const errorText = String((error && error.message) || '');
+            const fallback = /failed to fetch|networkerror/i.test(errorText)
+                ? 'Cannot reach chatbot API. Start chatbot_api.py for local use, or configure /api/chat on your server.'
+                : errorText || 'The GPT backend is not reachable right now. Start chatbot_api.py and try again.';
             updateTypingMessage(typingMessage, fallback);
             pushHistory('assistant', fallback);
         } finally {
