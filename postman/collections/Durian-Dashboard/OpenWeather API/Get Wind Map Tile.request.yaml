@@ -1,0 +1,15 @@
+$kind: http-request
+name: Get Wind Map Tile
+method: GET
+url: 'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png'
+order: 3000
+pathVariables:
+  - key: z
+    value: '1'
+  - key: x
+    value: '1'
+  - key: y
+    value: '1'
+queryParams:
+  - key: appid
+    value: '{{openweather_api_key}}'

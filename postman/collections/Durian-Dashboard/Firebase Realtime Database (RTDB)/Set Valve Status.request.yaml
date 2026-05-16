@@ -1,0 +1,14 @@
+$kind: http-request
+name: Set Valve Status
+method: PUT
+url: 'https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app/users/{{user_uid}}/devices/{{device_id}}/valve_control/valveStatus.json'
+order: 5000
+queryParams:
+  - key: auth
+    value: '{{firebase_id_token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: '"ON"'

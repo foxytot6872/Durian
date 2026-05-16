@@ -1,0 +1,8 @@
+$kind: http-request
+name: Delete Device from Registry
+method: DELETE
+url: 'https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app/device_registry/{{device_id}}.json'
+order: 6000
+queryParams:
+  - key: auth
+    value: '{{firebase_id_token}}'

@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Device Camera Feeds
+method: GET
+url: 'https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app/users/{{user_uid}}/devices/{{device_id}}/camera_feeds.json'
+order: 3000
+queryParams:
+  - key: auth
+    value: '{{firebase_id_token}}'

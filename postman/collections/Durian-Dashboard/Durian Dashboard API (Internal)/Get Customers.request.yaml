@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Customers
+method: GET
+url: 'https://api.durian-dashboard.com/api/customers'
+order: 3000

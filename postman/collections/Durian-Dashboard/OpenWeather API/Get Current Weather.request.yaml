@@ -1,0 +1,14 @@
+$kind: http-request
+name: Get Current Weather
+method: GET
+url: 'https://api.openweathermap.org/data/2.5/weather'
+order: 1000
+queryParams:
+  - key: lat
+    value: '{{lat}}'
+  - key: lon
+    value: '{{lon}}'
+  - key: appid
+    value: '{{openweather_api_key}}'
+  - key: units
+    value: metric

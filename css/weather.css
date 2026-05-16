@@ -114,6 +114,14 @@
     background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
+.weather-date {
+    margin: -0.25rem 0 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748b;
+    text-align: right;
+}
+
 /* Weather Charts */
 #temperatureChart,
 #windChart {

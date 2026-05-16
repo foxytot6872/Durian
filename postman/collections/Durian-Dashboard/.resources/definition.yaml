@@ -1,0 +1,24 @@
+$kind: collection
+name: Durian Dashboard
+variables:
+  - key: openweather_api_key
+    value: 'c77f6cae2743fcd686c29b44e574e221'
+    type: default
+  - key: lat
+    value: '13.7563'
+    type: default
+  - key: lon
+    value: '100.5018'
+    type: default
+  - key: firebase_id_token
+    value: ''
+    type: default
+  - key: user_uid
+    value: ''
+    type: default
+  - key: device_id
+    value: 'esp32_001'
+    type: default
+  - key: session_id
+    value: 'session_001'
+    type: default

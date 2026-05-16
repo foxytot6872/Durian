@@ -1,0 +1,15 @@
+$kind: http-request
+name: Send Chat Message
+method: POST
+url: 'https://mydurian.app.n8n.cloud/webhook/9b5b2e7b-4454-48a7-b0f5-fcde9d59f68d/chat'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "chatInput": "How do I improve soil moisture for durian trees?",
+      "sessionId": "{{session_id}}"
+    }
