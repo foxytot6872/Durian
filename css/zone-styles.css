@@ -183,9 +183,73 @@
 
 .irrigation-control-grid {
     display: grid;
-    grid-template-columns: 1.15fr 1fr 1fr;
+    grid-template-columns: 1.15fr 1fr;
     gap: 1.25rem;
-    align-items: start;
+    align-items: stretch;
+    height: 30rem;
+}
+
+.valve-log-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+    height: 18rem;
+}
+
+.valve-log-row .farm-management-card,
+.irrigation-control-grid .farm-management-card {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-list-card,
+.log-list-card {
+    min-height: 18rem;
+}
+
+.schedule-list-card .farm-log-list {
+    flex: 1;
+    min-height: 0;
+    max-height: 17.5rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.schedule-list-card .farm-log-item {
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 0.65rem 0.75rem;
+}
+
+.log-list-card .farm-log-list {
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    padding-right: 0;
+}
+
+.schedule-list-card .farm-log-list::-webkit-scrollbar,
+.log-list-card .farm-log-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.schedule-list-card .farm-log-list::-webkit-scrollbar-thumb,
+.log-list-card .farm-log-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+.schedule-list-card .farm-log-list::-webkit-scrollbar-track,
+.log-list-card .farm-log-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 999px;
 }
 
 .farm-wide-schedule {
@@ -301,7 +365,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0rem;
 }
 
 .irrigation-control-grid .watering-schedule-form {
@@ -379,14 +443,51 @@
 }
 
 .valve-control-card-simple {
-    margin-bottom: 2rem;
+    margin-bottom: 0;
+}
+
+.valve-control-card-simple .manual-water-status {
+    margin-top: auto;
+}
+
+.valve-state-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 0 px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.valve-state-indicator span {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 999px;
+    background: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.12);
+}
+
+.valve-state-indicator.open {
+    background: #f0fdf4;
+    border-color: rgba(75, 162, 82, 0.28);
+    color: #3d8743;
+}
+
+.valve-state-indicator.open span {
+    background: #4ba252;
+    box-shadow: 0 0 0 3px rgba(75, 162, 82, 0.16);
 }
 
 .manual-valve-controls {
     display: grid;
-    grid-template-columns: minmax(180px, 240px) auto 1fr;
-    gap: 1rem;
-    align-items: end;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    align-items: stretch;
 }
 
 .manual-valve-controls label {
@@ -395,12 +496,23 @@
     font-weight: 700;
 }
 
+.manual-duration-field {
+    width: min(100%, 320px);
+    justify-self: center;
+}
+
+.manual-duration-field span {
+    display: block;
+    text-align: center;
+}
+
 .manual-valve-controls select {
     width: 100%;
     margin-top: 0.35rem;
-    padding: 0.7rem 2.25rem 0.7rem 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.75rem 2.25rem 0.75rem 0.85rem;
     border: 1px solid #dbe3ec;
-    border-radius: 0.5rem;
+    border-radius: 2rem;
     background-color: white;
     color: #1e293b;
     appearance: none;
@@ -412,17 +524,104 @@
         calc(100% - 13px) 50%;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
+    font-size: 0.92rem;
+    font-weight: 700;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.manual-valve-controls select:focus {
+    border-color: #4ba252;
+    box-shadow: 0 0 0 3px rgba(75, 162, 82, 0.14);
+    outline: none;
+}
+
+.manual-valve-controls .btn-primary {
+    width: min(100%, 320px);
+    justify-self: center;
+    min-height: 3.05rem;
+    font-size: 1rem;
+    padding: 0.85rem 1.15rem;
+    border-radius: 2rem;
+}
+
+.manual-valve-controls .btn-primary:disabled {
+    background: #cbd5e1;
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.manual-water-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 1rem;
 }
 
 .manual-water-status {
-    min-height: 42px;
     display: flex;
     align-items: center;
-    padding: 0.7rem 0.85rem;
-    border-radius: 0.5rem;
-    background: #f1f5f9;
+    justify-content: center;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
     color: #475569;
-    font-weight: 700;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.manual-duration-field .manual-water-status {
+    min-height: 2.75rem;
+}
+
+.manual-cancel-button {
+    border: 1px solid #fecaca;
+    background: #fff7f7;
+    color: #b91c1c;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 800;
+    padding: 0.6rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.manual-cancel-button:hover {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.log-list-card .farm-log-list {
+    gap: 0.35rem;
+}
+
+.log-list-card .farm-log-item {
+    gap: 0.6rem;
+    padding: 0.45rem 0;
+    border: 0;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.log-list-card .farm-log-item:last-child {
+    border-bottom: 0;
+}
+
+.log-clear-button {
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 800;
+    padding: 0.35rem 0.5rem;
+    background: transparent;
+}
+
+.log-clear-button:hover {
+    background: #fff7f7;
+    border-color: #ef4444;
 }
 
 .watering-schedule-form button {
@@ -610,9 +809,17 @@
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 .camera-controls {
@@ -833,9 +1040,17 @@
 }
 
 @keyframes recordingPulse {
-    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
 }
 
 /* Valve Control System Styles */
@@ -942,11 +1157,11 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.valve-switch:checked + .valve-label .valve-slider {
+.valve-switch:checked+.valve-label .valve-slider {
     background: #4ba252;
 }
 
-.valve-switch:checked + .valve-label .valve-slider::before {
+.valve-switch:checked+.valve-label .valve-slider::before {
     transform: translateX(26px);
 }
 
@@ -1105,7 +1320,8 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .irrigation-control-grid {
+    .irrigation-control-grid,
+    .valve-log-row {
         grid-template-columns: 1fr;
     }
 
@@ -1138,6 +1354,7 @@
 }
 
 @media (max-width: 768px) {
+
     .farm-manager-hero,
     .farm-management-card {
         padding: 1rem;
@@ -1146,6 +1363,7 @@
     .farm-zone-picker,
     .farm-management-grid,
     .irrigation-control-grid,
+    .valve-log-row,
     .watering-schedule-form,
     .farm-wide-schedule .watering-schedule-form {
         grid-template-columns: 1fr;
@@ -1198,36 +1416,36 @@
     .zone-metric .metric-value {
         font-size: 1.5rem;
     }
-    
+
     .camera-header {
         flex-direction: column;
         gap: 1rem;
         align-items: flex-start;
     }
-    
+
     .camera-controls {
         width: 100%;
         justify-content: center;
     }
-    
+
     .action-buttons {
         grid-template-columns: 1fr;
     }
-    
+
     .zones-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
-    
+
     .valve-controls-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .status-header {
         flex-direction: column;
         gap: 1rem;
         align-items: flex-start;
     }
-    
+
     .status-filters {
         width: 100%;
         justify-content: center;
@@ -1238,19 +1456,19 @@
     .camera-feed {
         height: 300px;
     }
-    
+
     .camera-stats {
         gap: 1rem;
     }
-    
+
     .camera-stats .stat {
         min-width: 80px;
     }
-    
+
     .zone-metrics-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .zones-grid {
         grid-template-columns: 1fr;
     }

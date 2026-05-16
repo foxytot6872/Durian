@@ -132,6 +132,22 @@ const CONFIG = {
             ASC: 'asc',
             DESC: 'desc'
         }
+    },
+
+    // Shared OpenWeather settings
+    WEATHER_API: {
+        API_KEY: 'c77f6cae2743fcd686c29b44e574e221',
+        UNITS: 'metric',
+        DEFAULT_LOCATION: {
+            lat: 13.7563,
+            lon: 100.5018,
+            label: 'Rangsit, Pathum Thani'
+        },
+        ENDPOINTS: {
+            CURRENT: 'https://api.openweathermap.org/data/2.5/weather',
+            FORECAST: 'https://api.openweathermap.org/data/2.5/forecast',
+            MAP_TILE: 'https://tile.openweathermap.org/map'
+        }
     }
 };
 

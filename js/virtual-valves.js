@@ -21,6 +21,7 @@
             this.farmInfo = this.loadFarmInfo();
             this.manualWaterTimers = {};
             this.manualWaterRemaining = {};
+            this.manualWaterCompletedAt = {};
             this.init();
         }
 
@@ -156,12 +157,32 @@
         bindManualWatering() {
             const durationSelect = document.getElementById('manualWaterDuration');
             const waterButton = document.getElementById('manualWaterNowBtn');
+            const cancelButton = document.getElementById('manualWaterCancelBtn');
 
-            durationSelect?.addEventListener('change', () => this.updateManualWaterStatus());
+            durationSelect?.addEventListener('change', () => {
+                delete this.manualWaterCompletedAt[this.currentZone];
+                this.updateManualWaterStatus();
+            });
             waterButton?.addEventListener('click', () => {
+                const activeLog = this.getActiveManualTask(this.currentZone);
+                if (activeLog?.status === 'watering') {
+                    this.pauseWateringLog(activeLog.id);
+                    return;
+                }
+
+                if (activeLog?.status === 'paused') {
+                    this.resumeWateringLog(activeLog.id);
+                    return;
+                }
+
                 const duration = Number(durationSelect?.value || 30);
+                delete this.manualWaterCompletedAt[this.currentZone];
                 const log = this.waterZone(this.currentZone, duration, 'manual', null, 'watering');
                 this.startManualWaterCountdown(duration, log?.id);
+            });
+            cancelButton?.addEventListener('click', () => {
+                const activeLog = this.getActiveManualTask(this.currentZone);
+                if (activeLog) this.cancelWateringLog(activeLog.id);
             });
         }
 
@@ -202,10 +223,6 @@
 
                 if (actionButton.dataset.scheduleAction === 'remove') {
                     this.removeSchedule(actionButton.dataset.scheduleId);
-                }
-
-                if (actionButton.dataset.scheduleAction === 'run') {
-                    this.runSchedule(actionButton.dataset.scheduleId);
                 }
 
                 if (actionButton.dataset.logAction === 'clear') {
@@ -277,22 +294,12 @@
             this.deleteScheduleFromFirebase(scheduleId);
         }
 
-        runSchedule(scheduleId) {
-            const schedule = this.schedules.find((item) => item.id === scheduleId);
-            if (!schedule) return;
-            this.waterZone(schedule.zone, schedule.duration, 'scheduled', schedule.waterAmountLiters);
-            schedule.status = 'completed';
-            schedule.completedAt = new Date().toISOString();
-            this.saveSchedules();
-            this.render();
-            this.syncScheduleToFirebase(schedule);
-        }
-
         waterZone(zone = this.currentZone, duration = 30, mode = 'manual', waterAmountLiters = null, status = 'completed') {
             const zoneValves = this.valves[zone] || [];
+            const startedAt = new Date();
             zoneValves.forEach((valve) => {
                 valve.status = 'open';
-                valve.lastOpenedAt = new Date().toISOString();
+                valve.lastOpenedAt = startedAt.toISOString();
             });
 
             const log = {
@@ -304,10 +311,15 @@
                 waterAmountLiters: waterAmountLiters || this.calculateWaterAmount(duration, zone),
                 mode,
                 status,
-                createdAt: new Date().toISOString()
+                createdAt: startedAt.toISOString(),
+                startedAt: startedAt.toISOString(),
+                endsAt: new Date(startedAt.getTime() + Number(duration || 0) * 60 * 1000).toISOString()
             };
 
             this.logs.unshift(log);
+            if (status !== 'watering') {
+                this.closeZoneValves(zone);
+            }
             this.saveValves();
             this.saveLogs();
             this.render();
@@ -325,8 +337,11 @@
         }
 
         render() {
+            this.completeExpiredWateringLogs();
+            this.resumeActiveWateringTimers();
             this.renderZoneSwitcher();
             this.renderFarmInformation();
+            this.renderValveState();
             this.updateWaterAmountPreview();
             this.updateManualWaterStatus();
             this.renderZoneSchedules();
@@ -379,6 +394,16 @@
             }
         }
 
+        renderValveState() {
+            const indicator = document.getElementById('valveStateIndicator');
+            if (!indicator) return;
+
+            const isOpen = (this.valves[this.currentZone] || []).some((valve) => valve.status === 'open');
+            indicator.classList.toggle('open', isOpen);
+            const label = indicator.querySelector('strong');
+            if (label) label.textContent = isOpen ? 'Valve open' : 'Valve closed';
+        }
+
         getTreeAgeStage(age) {
             const years = Number(age);
             if (!Number.isFinite(years)) return 'Unknown stage';
@@ -407,16 +432,13 @@
 
         renderZoneLogs() {
             const list = document.getElementById('wateringLogList');
+            const clearButton = document.getElementById('clearZoneLogsBtn');
             if (!list) return;
 
             const zoneLogs = this.logs.filter((log) => log.zone === this.currentZone).slice(0, 8);
+            clearButton?.classList.toggle('hidden', !zoneLogs.length);
             list.innerHTML = zoneLogs.length
-                ? `
-                    ${zoneLogs.map((log) => this.logTemplate(log)).join('')}
-                    <div class="farm-log-toolbar">
-                        <button type="button" data-log-action="clear" data-log-scope="zone">Clear Zone Log</button>
-                    </div>
-                `
+                ? zoneLogs.map((log) => this.logTemplate(log)).join('')
                 : '<p class="empty-log">No watering logs for this zone yet.</p>';
         }
 
@@ -449,7 +471,6 @@
                         <small>${this.scheduleMeta(schedule)}</small>
                     </div>
                     <div class="farm-log-actions">
-                        <button type="button" data-schedule-action="run" data-schedule-id="${schedule.id}">Run</button>
                         <button type="button" data-schedule-action="remove" data-schedule-id="${schedule.id}">Remove</button>
                     </div>
                 </div>
@@ -470,7 +491,10 @@
         }
 
         formatLogStatus(status = 'completed') {
-            return status === 'watering' ? 'Watering' : 'Completed';
+            if (status === 'watering') return 'Watering';
+            if (status === 'paused') return 'Paused';
+            if (status === 'cancelled') return 'Cancelled';
+            return 'Completed';
         }
 
         setDefaultTimes() {
@@ -513,26 +537,78 @@
 
         updateManualWaterStatus() {
             const status = document.getElementById('manualWaterStatus');
-            const duration = Number(document.getElementById('manualWaterDuration')?.value || 30);
+            const waterButton = document.getElementById('manualWaterNowBtn');
+            const cancelButton = document.getElementById('manualWaterCancelBtn');
+            const durationSelect = document.getElementById('manualWaterDuration');
+            const duration = Number(durationSelect?.value || 30);
             if (!status) return;
+
+            const setTaskState = (state) => {
+                const isActive = state === 'watering' || state === 'paused';
+                status.classList.toggle('hidden', !isActive);
+                durationSelect?.classList.toggle('hidden', isActive);
+                cancelButton?.classList.toggle('hidden', !isActive);
+                if (waterButton) {
+                    waterButton.disabled = false;
+                    waterButton.textContent = state === 'watering' ? 'Pause' : state === 'paused' ? 'Resume' : 'Water Now';
+                }
+            };
 
             const remaining = this.manualWaterRemaining[this.currentZone];
             if (remaining && remaining > 0) {
+                setTaskState('watering');
                 status.textContent = `Time left ${this.formatCountdown(remaining)}`;
                 return;
             }
 
-            status.textContent = `Water for ${duration} min`;
+            const pausedLog = this.logs.find((log) => log.zone === this.currentZone && log.status === 'paused');
+            if (pausedLog) {
+                setTaskState('paused');
+                status.textContent = `Paused at ${this.formatCountdown(pausedLog.remainingSeconds || 0)}`;
+                return;
+            }
+
+            const activeLog = this.getActiveWateringLog(this.currentZone);
+            if (activeLog) {
+                const secondsLeft = this.getSecondsUntil(activeLog.endsAt);
+                if (secondsLeft > 0) {
+                    this.manualWaterRemaining[this.currentZone] = secondsLeft;
+                    setTaskState('watering');
+                    status.textContent = `Time left ${this.formatCountdown(secondsLeft)}`;
+                    return;
+                }
+            }
+
+            setTaskState('idle');
+
+            const completedAt = this.manualWaterCompletedAt[this.currentZone];
+            if (completedAt && Date.now() - completedAt < 5 * 60 * 1000) {
+                const latestLog = this.logs.find((log) => log.zone === this.currentZone && log.completedAt);
+                if (latestLog?.status === 'cancelled') {
+                    durationSelect?.classList.remove('hidden');
+                    status.classList.add('hidden');
+                    return;
+                }
+                status.classList.remove('hidden');
+                durationSelect?.classList.add('hidden');
+                status.textContent = 'Watering complete';
+                return;
+            }
+
+            if (durationSelect) durationSelect.classList.remove('hidden');
+            status.classList.add('hidden');
         }
 
-        startManualWaterCountdown(duration, logId = null) {
-            const zone = this.currentZone;
+        startManualWaterCountdown(duration, logId = null, zone = this.currentZone) {
 
             if (this.manualWaterTimers[zone]) {
                 clearInterval(this.manualWaterTimers[zone]);
             }
 
-            this.manualWaterRemaining[zone] = duration * 60;
+            const log = this.logs.find((item) => item.id === logId);
+            this.manualWaterRemaining[zone] = log?.endsAt
+                ? this.getSecondsUntil(log.endsAt)
+                : duration * 60;
             const render = () => {
                 if (zone === this.currentZone) {
                     this.updateManualWaterStatus();
@@ -557,12 +633,132 @@
             }, 1000);
         }
 
+        resumeActiveWateringTimers() {
+            this.logs
+                .filter((log) => log.status === 'watering' && this.getSecondsUntil(log.endsAt) > 0)
+                .forEach((log) => {
+                    if (this.manualWaterTimers[log.zone]) return;
+                    this.startManualWaterCountdown(log.duration, log.id, log.zone);
+                });
+        }
+
+        getActiveWateringLog(zone) {
+            return this.logs.find((log) => log.zone === zone && log.status === 'watering' && this.getSecondsUntil(log.endsAt) > 0);
+        }
+
+        getActiveManualTask(zone) {
+            return this.logs.find((log) => log.zone === zone && ['watering', 'paused'].includes(log.status));
+        }
+
+        getSecondsUntil(value) {
+            if (!value) return 0;
+            return Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 1000));
+        }
+
+        completeExpiredWateringLogs() {
+            const expiredLogs = this.logs.filter((log) => log.status === 'watering' && this.getSecondsUntil(log.endsAt) <= 0);
+            if (!expiredLogs.length) return;
+
+            expiredLogs.forEach((log) => {
+                log.status = 'completed';
+                log.completedAt = log.endsAt || new Date().toISOString();
+                this.closeZoneValves(log.zone);
+                this.manualWaterCompletedAt[log.zone] = Date.now();
+                this.syncLogToFirebase(log);
+            });
+            this.saveValves();
+            this.saveLogs();
+        }
+
+        closeZoneValves(zone) {
+            const zoneValves = this.valves[zone] || [];
+            zoneValves.forEach((valve) => {
+                valve.status = 'closed';
+                valve.lastClosedAt = new Date().toISOString();
+            });
+        }
+
+        openZoneValves(zone) {
+            const zoneValves = this.valves[zone] || [];
+            zoneValves.forEach((valve) => {
+                valve.status = 'open';
+                valve.lastOpenedAt = new Date().toISOString();
+            });
+        }
+
         completeWateringLog(logId) {
             const log = this.logs.find((item) => item.id === logId);
             if (!log) return;
 
             log.status = 'completed';
             log.completedAt = new Date().toISOString();
+            this.closeZoneValves(log.zone);
+            this.manualWaterCompletedAt[log.zone] = Date.now();
+            this.saveValves();
+            this.saveLogs();
+            this.render();
+            this.syncLogToFirebase(log);
+        }
+
+        pauseWateringLog(logId) {
+            const log = this.logs.find((item) => item.id === logId);
+            if (!log) return;
+
+            if (this.manualWaterTimers[log.zone]) {
+                clearInterval(this.manualWaterTimers[log.zone]);
+                delete this.manualWaterTimers[log.zone];
+            }
+
+            const remaining = this.manualWaterRemaining[log.zone] || this.getSecondsUntil(log.endsAt);
+            delete this.manualWaterRemaining[log.zone];
+            log.status = 'paused';
+            log.remainingSeconds = remaining;
+            log.pausedAt = new Date().toISOString();
+            this.closeZoneValves(log.zone);
+            this.saveValves();
+            this.saveLogs();
+            this.render();
+            this.syncLogToFirebase(log);
+        }
+
+        resumeWateringLog(logId) {
+            const log = this.logs.find((item) => item.id === logId);
+            if (!log) return;
+
+            const remaining = Number(log.remainingSeconds || 0);
+            if (remaining <= 0) {
+                this.completeWateringLog(logId);
+                return;
+            }
+
+            log.status = 'watering';
+            log.resumedAt = new Date().toISOString();
+            log.endsAt = new Date(Date.now() + remaining * 1000).toISOString();
+            delete log.remainingSeconds;
+            this.openZoneValves(log.zone);
+            this.saveValves();
+            this.saveLogs();
+            this.startManualWaterCountdown(log.duration, log.id, log.zone);
+            this.render();
+            this.syncLogToFirebase(log);
+        }
+
+        cancelWateringLog(logId) {
+            const log = this.logs.find((item) => item.id === logId);
+            if (!log) return;
+
+            if (this.manualWaterTimers[log.zone]) {
+                clearInterval(this.manualWaterTimers[log.zone]);
+                delete this.manualWaterTimers[log.zone];
+            }
+
+            delete this.manualWaterRemaining[log.zone];
+            log.status = 'cancelled';
+            log.cancelledAt = new Date().toISOString();
+            log.completedAt = log.cancelledAt;
+            this.closeZoneValves(log.zone);
+            this.manualWaterCompletedAt[log.zone] = Date.now();
+            this.saveValves();
             this.saveLogs();
             this.render();
             this.syncLogToFirebase(log);

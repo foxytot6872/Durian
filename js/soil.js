@@ -317,7 +317,7 @@ class SoilDashboard {
                     yAxisID: 'score'
                 },
                 {
-                    label: 'Temp °C',
+                    label: 'Soil Temp °C',
                     data: records.map(record => record.temperature),
                     borderColor: '#f97316',
                     backgroundColor: 'rgba(249, 115, 22, 0.08)',
