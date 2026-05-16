@@ -8,6 +8,8 @@ class WeatherDashboard {
         this.apiKey = 'c77f6cae2743fcd686c29b44e574e221';
         this.apiEndpoint = 'https://api.openweathermap.org/data/2.5/forecast';
         this.forecastList = []; // Cached forecast entries from API
+        this.hourlyDayOffset = 0; // 0 = today, 1 = tomorrow, etc.
+        this.uniqueDays = []; // list of YYYY-MM-DD strings present in forecastList
 
         this.init();
     }
@@ -37,11 +39,24 @@ class WeatherDashboard {
             }
             const data = await response.json();
             this.forecastList = data.list || [];
+
+            // Build unique date list (YYYY-MM-DD) for day navigation
+            this.uniqueDays = Array.from(new Set(this.forecastList.map(e => e.dt_txt ? e.dt_txt.split(' ')[0] : ''))).filter(Boolean);
+            if (this.uniqueDays.length === 0) {
+                // Fallback: keep using first 5 days by slicing timestamps
+                this.uniqueDays = this.forecastList.slice(0, 40).map(e => e.dt_txt ? e.dt_txt.split(' ')[0] : '').filter(Boolean);
+                this.uniqueDays = Array.from(new Set(this.uniqueDays));
+            }
+
+            // Reset offset if out of range
+            if (this.hourlyDayOffset >= this.uniqueDays.length) this.hourlyDayOffset = Math.max(0, this.uniqueDays.length - 1);
+
             this.renderStatCards(this.forecastList);
             this.updateTemperatureChart(this.forecastList);
             this.updateWindChart(this.forecastList);
-            this.populateHourlyForecast(this.forecastList);
+            this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
             this.populateWeatherAlerts([]);
+            this.updateForecastDayControls();
         } catch (error) {
             console.error('Failed to fetch weather data:', error);
             this.showErrorState(error.message);
@@ -342,20 +357,103 @@ class WeatherDashboard {
                 this.refreshWeatherAlerts();
             });
         }
+
+        // Hour navigation controls (Today / Prev / Next)
+        const prevBtn = document.getElementById('forecastPrevDay');
+        const todayBtn = document.getElementById('forecastToday');
+        const nextBtn = document.getElementById('forecastNextDay');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (this.hourlyDayOffset > 0) this.hourlyDayOffset--;
+                this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
+                this.updateForecastDayControls();
+            });
+        }
+
+        if (todayBtn) {
+            todayBtn.addEventListener('click', () => {
+                this.hourlyDayOffset = 0;
+                this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
+                this.updateForecastDayControls();
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                if (this.uniqueDays && this.hourlyDayOffset < this.uniqueDays.length - 1) this.hourlyDayOffset++;
+                this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
+                this.updateForecastDayControls();
+            });
+        }
+    }
+
+    // Update the day label and disable/enable prev/next buttons accordingly
+    updateForecastDayControls() {
+        const label = document.getElementById('forecastDayLabel');
+        const prevBtn = document.getElementById('forecastPrevDay');
+        const nextBtn = document.getElementById('forecastNextDay');
+        const todayBtn = document.getElementById('forecastToday');
+
+        if (!label) return;
+
+        if (!this.uniqueDays || this.uniqueDays.length === 0) {
+            label.textContent = '--';
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            if (todayBtn) todayBtn.disabled = true;
+            return;
+        }
+
+        const dayStr = this.uniqueDays[this.hourlyDayOffset];
+        const d = new Date(dayStr + 'T00:00:00');
+        const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+        label.textContent = d.toLocaleDateString(undefined, opts);
+
+        if (prevBtn) prevBtn.disabled = this.hourlyDayOffset <= 0;
+        if (nextBtn) nextBtn.disabled = this.hourlyDayOffset >= this.uniqueDays.length - 1;
+        if (todayBtn) todayBtn.disabled = this.hourlyDayOffset === 0;
     }
 
     // ─── Hourly Forecast Table ────────────────────────────────────────────────
 
-    populateHourlyForecast(list) {
+    populateHourlyForecast(list, dayOffset = 0) {
         const tbody = document.getElementById('hourlyForecastBody');
         if (!tbody) return;
 
         if (!list || list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5">No forecast data available.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6">No forecast data available.</td></tr>';
             return;
         }
 
-        const entries = list.slice(0, 8);
+        // Use uniqueDays (set during fetch) to pick the requested day; fallback to first 8 entries
+        let entries = [];
+        if (this.uniqueDays && this.uniqueDays.length > 0) {
+            const idx = Math.min(Math.max(0, dayOffset), this.uniqueDays.length - 1);
+            const dayKey = this.uniqueDays[idx];
+            entries = list.filter(e => e.dt_txt && e.dt_txt.startsWith(dayKey));
+        }
+
+        if (!entries || entries.length === 0) {
+            // fallback to slicing a window starting at dayOffset * 8
+            const start = Math.min(Math.max(0, dayOffset * 8), list.length - 1);
+            entries = list.slice(start, start + 8);
+        }
+
+        // Helper for icon fallback mapping
+        const faMap = {
+            'Clear': 'fa-sun',
+            'Clouds': 'fa-cloud-sun',
+            'Rain': 'fa-cloud-showers-heavy',
+            'Drizzle': 'fa-cloud-rain',
+            'Thunderstorm': 'fa-bolt',
+            'Snow': 'fa-snowflake',
+            'Mist': 'fa-smog',
+            'Smoke': 'fa-smog',
+            'Haze': 'fa-smog',
+            'Fog': 'fa-smog'
+        };
+
         tbody.innerHTML = entries.map(entry => {
             const time = this.formatTime(entry.dt_txt);
             const temp = `${entry.main.temp.toFixed(1)}°C`;
@@ -364,9 +462,28 @@ class WeatherDashboard {
             const wind = `${windKmh} km/h ${windDir}`;
             const humidity = `${entry.main.humidity}%`;
             const precip = `${Math.round((entry.pop || 0) * 100)}%`;
+
+            // Weather icon and description
+            const weather = (entry.weather && entry.weather[0]) ? entry.weather[0] : null;
+            let iconHtml = '';
+            if (weather && weather.icon) {
+                // Use OpenWeather icon if available
+                const iconUrl = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
+                iconHtml = `<img src="${iconUrl}" alt="${weather.description || ''}" class="ow-icon" width="36" height="36" onerror="this.style.display='none'">`;
+            }
+            if (!iconHtml && weather && weather.main && faMap[weather.main]) {
+                iconHtml = `<i class="fas ${faMap[weather.main]} fa-lg" aria-hidden="true"></i>`;
+            }
+            if (!iconHtml) {
+                iconHtml = `<i class="fas fa-cloud fa-lg" aria-hidden="true"></i>`;
+            }
+
+            const conditionText = weather && weather.description ? weather.description : '—';
+
             return `
             <tr>
                 <td>${time}</td>
+                <td class="condition-cell">${iconHtml} <span class="condition-text">${conditionText}</span></td>
                 <td>${temp}</td>
                 <td>${wind}</td>
                 <td>${humidity}</td>
