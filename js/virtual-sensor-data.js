@@ -1,63 +1,9 @@
 const HISTORY_KEY = 'durianVirtualSensorHistoryV1';
 const LAST_SNAPSHOT_KEY = 'durianVirtualSensorLastSnapshotHourV1';
-const TEST_SCENARIO_KEY = 'durianVirtualSensorTestScenarioV1';
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 const HISTORY_DAYS = 30;
 const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
-const TEST_SCENARIOS = {
-    heat: {
-        label: 'Extreme heat',
-        weather: 'Extreme heat test',
-        moistureOffset: -24,
-        temperatureOffset: 7.5,
-        humidity: 48,
-        rainfall: 0,
-        ecOffset: 520
-    },
-    flood: {
-        label: 'Flood / waterlogging',
-        weather: 'Flood test',
-        moistureOffset: 28,
-        temperatureOffset: -1.2,
-        humidity: 97,
-        rainfall: 58,
-        ecOffset: 860,
-        nutrientOffset: -6
-    },
-    drought: {
-        label: 'Drought',
-        weather: 'Drought test',
-        moistureOffset: -34,
-        temperatureOffset: 4.5,
-        humidity: 42,
-        rainfall: 0,
-        ecOffset: 680,
-        nutrientOffset: -4
-    },
-    nutrient: {
-        label: 'Nutrient collapse',
-        weather: 'Nutrient stress test',
-        moistureOffset: -8,
-        temperatureOffset: 1.8,
-        humidity: 72,
-        rainfall: 0,
-        ecOffset: 250,
-        nutrientOffset: -15,
-        phOffset: -0.7
-    },
-    storm: {
-        label: 'Storm damage',
-        weather: 'Storm test',
-        moistureOffset: 18,
-        temperatureOffset: -2.5,
-        humidity: 96,
-        rainfall: 74,
-        ecOffset: 980,
-        nutrientOffset: -9,
-        phOffset: -0.3
-    }
-};
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -94,8 +40,6 @@ class VirtualSensorDataStore {
         this.ensureHourlySnapshot();
         this.startHourlyStorage();
         window.VirtualSensorData = this;
-        window.setExtremeWeatherTest = (scenario) => this.setTestScenario(scenario);
-        window.clearExtremeWeatherTest = () => this.clearTestScenario();
     }
 
     loadHistory() {
@@ -126,7 +70,7 @@ class VirtualSensorDataStore {
         const seeded = [];
         for (let timestamp = oldestNeeded; timestamp <= newestAllowed; timestamp += HOUR) {
             this.zones.forEach((zone, index) => {
-                seeded.push(this.buildRecord(timestamp, zone, index, false));
+                seeded.push(this.buildRecord(timestamp, zone, index));
             });
         }
 
@@ -147,7 +91,7 @@ class VirtualSensorDataStore {
 
         this.zones.forEach((zone, index) => {
             const existingIndex = this.history.findIndex(record => record.timestamp === currentHour && record.zone === zone);
-            const record = this.buildRecord(currentHour, zone, index, false);
+            const record = this.buildRecord(currentHour, zone, index);
             if (existingIndex >= 0) {
                 this.history[existingIndex] = record;
             } else {
@@ -200,7 +144,7 @@ class VirtualSensorDataStore {
         return { dayIndex, hour, rainfall, condition, temperature, humidity };
     }
 
-    buildRecord(timestamp, zone, zoneIndex, applyTestScenario = true) {
+    buildRecord(timestamp, zone, zoneIndex) {
         const weather = this.getCondition(timestamp);
         const zoneBias = [-1.5, 1.5, -4.5, 3][zoneIndex] || 0;
         const dailyWave = Math.sin((weather.hour / 24) * Math.PI * 2);
@@ -208,33 +152,14 @@ class VirtualSensorDataStore {
         const rainBoost = weather.rainfall > 0 ? weather.rainfall * 0.7 : 0;
         const noise = (hash((timestamp / HOUR) + zoneIndex * 37) - 0.5) * 4;
 
-        let moisture = round(clamp(62 + zoneBias - drySpell + rainBoost - dailyWave * 5 + noise, 12, 96));
-        let temperature = round(weather.temperature + zoneIndex * 0.4 + (moisture < 30 ? 1.8 : 0), 1);
+        const moisture = round(clamp(62 + zoneBias - drySpell + rainBoost - dailyWave * 5 + noise, 12, 96));
+        const temperature = round(weather.temperature + zoneIndex * 0.4 + (moisture < 30 ? 1.8 : 0), 1);
         const phStress = weather.dayIndex >= 8 && zone === 'Zone C' ? -0.65 : 0;
-        let ph = round(clamp(6.55 + phStress + (hash(timestamp / HOUR + zoneIndex) - 0.5) * 0.35, 4.8, 8.2), 1);
-        let ec = round(clamp(1180 + (weather.rainfall > 20 ? 780 : 0) + (moisture < 28 ? 520 : 0) + zoneIndex * 95 + noise * 28, 640, 3150));
-        let n = round(clamp(26 - (zone === 'Zone C' ? 13 : 0) - (weather.rainfall > 20 ? 5 : 0) + hash(timestamp / HOUR + 9) * 5, 4, 42));
-        let p = round(clamp(14 - (zone === 'Zone C' ? 7 : 0) + hash(timestamp / HOUR + 17) * 3, 2, 26));
-        let k = round(clamp(31 - (zone === 'Zone B' && weather.dayIndex > 9 ? 16 : 0) + hash(timestamp / HOUR + 23) * 6, 3, 52));
-        let humidity = weather.humidity;
-        let rainfall = weather.rainfall;
-        let weatherLabel = weather.condition;
-
-        const scenario = applyTestScenario ? this.getTestScenario() : null;
-        if (scenario) {
-            const overrides = TEST_SCENARIOS[scenario];
-            moisture = round(clamp(moisture + (overrides.moistureOffset || 0), 8, 98));
-            temperature = round(clamp(temperature + (overrides.temperatureOffset || 0), 12, 45), 1);
-            ph = round(clamp(ph + (overrides.phOffset || 0), 4.3, 8.8), 1);
-            ec = round(clamp(ec + (overrides.ecOffset || 0), 500, 3800));
-            n = round(clamp(n + (overrides.nutrientOffset || 0), 1, 42));
-            p = round(clamp(p + (overrides.nutrientOffset || 0), 1, 26));
-            k = round(clamp(k + (overrides.nutrientOffset || 0), 1, 52));
-            humidity = overrides.humidity;
-            rainfall = overrides.rainfall;
-            weatherLabel = overrides.weather;
-        }
-
+        const ph = round(clamp(6.55 + phStress + (hash(timestamp / HOUR + zoneIndex) - 0.5) * 0.35, 4.8, 8.2), 1);
+        const ec = round(clamp(1180 + (weather.rainfall > 20 ? 780 : 0) + (moisture < 28 ? 520 : 0) + zoneIndex * 95 + noise * 28, 640, 3150));
+        const n = round(clamp(26 - (zone === 'Zone C' ? 13 : 0) - (weather.rainfall > 20 ? 5 : 0) + hash(timestamp / HOUR + 9) * 5, 4, 42));
+        const p = round(clamp(14 - (zone === 'Zone C' ? 7 : 0) + hash(timestamp / HOUR + 17) * 3, 2, 26));
+        const k = round(clamp(31 - (zone === 'Zone B' && weather.dayIndex > 9 ? 16 : 0) + hash(timestamp / HOUR + 23) * 6, 3, 52));
         const status = this.classifyStatus({ moisture, temperature, ph, ec, n, p, k });
 
         return {
@@ -248,9 +173,9 @@ class VirtualSensorDataStore {
             n,
             p,
             k,
-            humidity,
-            rainfall,
-            weather: weatherLabel,
+            humidity: weather.humidity,
+            rainfall: weather.rainfall,
+            weather: weather.condition,
             status: status.level,
             score: status.score,
             notes: status.notes
@@ -333,7 +258,6 @@ class VirtualSensorDataStore {
                 weather: base.weather,
                 status: base.status,
                 farmStatusScore: base.score,
-                testScenario: this.getTestScenario(),
                 timestamp: Date.now(),
                 source: 'virtual'
             };
@@ -353,46 +277,9 @@ class VirtualSensorDataStore {
 
     getHistory(zone = null) {
         this.ensureHourlySnapshot();
-        if (this.getTestScenario()) {
-            const newestAllowed = startOfHour();
-            const oldestNeeded = newestAllowed - (HISTORY_DAYS * DAY) + HOUR;
-            const testingHistory = [];
-            for (let timestamp = oldestNeeded; timestamp <= newestAllowed; timestamp += HOUR) {
-                this.zones.forEach((itemZone, index) => {
-                    testingHistory.push(this.buildRecord(timestamp, itemZone, index));
-                });
-            }
-            return testingHistory
-                .filter(record => !zone || record.zone === zone)
-                .sort((a, b) => a.timestamp - b.timestamp);
-        }
-
         return this.history
             .filter(record => !zone || record.zone === zone)
             .sort((a, b) => a.timestamp - b.timestamp);
-    }
-
-    getTestScenario() {
-        const scenario = localStorage.getItem(TEST_SCENARIO_KEY);
-        return TEST_SCENARIOS[scenario] ? scenario : null;
-    }
-
-    setTestScenario(scenario) {
-        if (!TEST_SCENARIOS[scenario]) {
-            console.warn(`Unknown extreme weather test: ${scenario}. Try: ${Object.keys(TEST_SCENARIOS).join(', ')}`);
-            return false;
-        }
-
-        localStorage.setItem(TEST_SCENARIO_KEY, scenario);
-        console.info(`Extreme weather test enabled: ${TEST_SCENARIOS[scenario].label}`);
-        window.dispatchEvent(new CustomEvent('virtual-sensors:test-scenario-change', { detail: { scenario } }));
-        return true;
-    }
-
-    clearTestScenario() {
-        localStorage.removeItem(TEST_SCENARIO_KEY);
-        console.info('Extreme weather test disabled.');
-        window.dispatchEvent(new CustomEvent('virtual-sensors:test-scenario-change', { detail: { scenario: null } }));
     }
 
     getHourlyTrend(dayOffset = 0, zone = null) {
