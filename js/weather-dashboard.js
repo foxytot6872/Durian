@@ -5,17 +5,10 @@ class WeatherDashboard {
         this.temperatureChart = null;
         this.windChart = null;
         this.currentLocation = { lat: 13.7563, lon: 100.5018 }; // Bangkok, Thailand
-        this.weatherData = {
-            current: {
-                temperature: 28,
-                windSpeed: 12,
-                humidity: 75,
-                visibility: 10
-            },
-            forecast: [],
-            alerts: []
-        };
-        
+        this.apiKey = 'c77f6cae2743fcd686c29b44e574e221';
+        this.apiEndpoint = 'https://api.openweathermap.org/data/2.5/forecast';
+        this.forecastList = []; // Cached forecast entries from API
+
         this.init();
     }
 
@@ -23,15 +16,86 @@ class WeatherDashboard {
     async init() {
         this.initializeCharts();
         this.initializeEventListeners();
-        this.loadWeatherData();
-        
+        await this.fetchAndRender();
+
         // Initialize Windy map after a short delay to ensure API is loaded
         setTimeout(() => {
             this.initializeWeatherMap();
         }, 1000);
     }
 
-    // Initialize weather charts
+    // ─── API Fetch ────────────────────────────────────────────────────────────
+
+    // Fetch live forecast data from OpenWeatherMap and render all sections
+    async fetchAndRender() {
+        this.showLoadingState();
+        try {
+            const url = `${this.apiEndpoint}?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}&appid=${this.apiKey}&units=metric`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} ${response.statusText}`);
+            }
+            const data = await response.json();
+            this.forecastList = data.list || [];
+            this.renderStatCards(this.forecastList);
+            this.updateTemperatureChart(this.forecastList);
+            this.updateWindChart(this.forecastList);
+            this.populateHourlyForecast(this.forecastList);
+            this.populateWeatherAlerts([]);
+        } catch (error) {
+            console.error('Failed to fetch weather data:', error);
+            this.showErrorState(error.message);
+        }
+    }
+
+    // ─── Loading / Error States ───────────────────────────────────────────────
+
+    showLoadingState() {
+        const ids = ['currentTemp', 'windSpeed', 'humidity', 'visibility'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = 'Loading...';
+        });
+    }
+
+    showErrorState(message) {
+        const ids = ['currentTemp', 'windSpeed', 'humidity', 'visibility'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = 'Error';
+        });
+        // Show a visible error banner if a suitable container exists
+        const statsArea = document.querySelector('.weather-stats, .stat-cards, .stats-grid');
+        if (statsArea) {
+            const banner = document.createElement('p');
+            banner.style.cssText = 'color:#e74c3c;font-weight:bold;margin-top:8px;';
+            banner.textContent = `Could not load weather data: ${message}`;
+            statsArea.appendChild(banner);
+        }
+    }
+
+    // ─── Stat Cards ───────────────────────────────────────────────────────────
+
+    renderStatCards(list) {
+        if (!list || list.length === 0) return;
+        const current = list[0];
+
+        const tempEl = document.getElementById('currentTemp');
+        if (tempEl) tempEl.textContent = `${current.main.temp.toFixed(1)}°C`;
+
+        const windEl = document.getElementById('windSpeed');
+        if (windEl) windEl.textContent = `${(current.wind.speed * 3.6).toFixed(1)} km/h`;
+
+        const humidityEl = document.getElementById('humidity');
+        if (humidityEl) humidityEl.textContent = `${current.main.humidity}%`;
+
+        const visibilityEl = document.getElementById('visibility');
+        if (visibilityEl) visibilityEl.textContent = `${(current.visibility / 1000).toFixed(1)} km`;
+    }
+
+    // ─── Charts ───────────────────────────────────────────────────────────────
+
+    // Initialize weather charts with empty placeholders
     initializeCharts() {
         this.createTemperatureChart();
         this.createWindChart();
@@ -45,10 +109,10 @@ class WeatherDashboard {
         this.temperatureChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                labels: [],
                 datasets: [{
                     label: 'Temperature (°C)',
-                    data: [26, 25, 24, 27, 30, 32, 29, 28],
+                    data: [],
                     borderColor: 'rgb(255, 107, 107)',
                     backgroundColor: 'rgba(255, 107, 107, 0.1)',
                     borderWidth: 3,
@@ -95,30 +159,36 @@ class WeatherDashboard {
         });
     }
 
-    // Create wind speed and direction chart
+    // Update temperature chart with live API data
+    updateTemperatureChart(list) {
+        if (!this.temperatureChart || !list || list.length === 0) return;
+        const entries = list.slice(0, 8);
+        this.temperatureChart.data.labels = entries.map(e => this.formatTime(e.dt_txt));
+        this.temperatureChart.data.datasets[0].data = entries.map(e => e.main.temp);
+        this.temperatureChart.update();
+    }
+
+    // Create wind speed chart
     createWindChart() {
         const ctx = document.getElementById('windChart');
         if (!ctx) return;
 
         this.windChart = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+                labels: [],
                 datasets: [{
                     label: 'Wind Speed (km/h)',
-                    data: [8, 12, 15, 10, 6, 9, 11, 7],
-                    backgroundColor: [
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)',
-                        'rgba(79, 172, 254, 0.8)'
-                    ],
+                    data: [],
                     borderColor: 'rgb(79, 172, 254)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgb(79, 172, 254)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6
                 }]
             },
             options: {
@@ -151,12 +221,23 @@ class WeatherDashboard {
         });
     }
 
+    // Update wind chart with live API data
+    updateWindChart(list) {
+        if (!this.windChart || !list || list.length === 0) return;
+        const entries = list.slice(0, 8);
+        this.windChart.data.labels = entries.map(e => this.formatTime(e.dt_txt));
+        this.windChart.data.datasets[0].data = entries.map(e => parseFloat((e.wind.speed * 3.6).toFixed(1)));
+        this.windChart.update();
+    }
+
+    // ─── Windy Map ────────────────────────────────────────────────────────────
+
     // Initialize Windy weather map
     async initializeWeatherMap() {
         try {
             this.weatherMap = new WeatherMapComponent();
             const success = await this.weatherMap.initMap('windyMap');
-            
+
             if (success) {
                 console.log('Weather map initialized successfully');
                 this.setupMapControls();
@@ -208,7 +289,8 @@ class WeatherDashboard {
         }
     }
 
-    // Initialize event listeners
+    // ─── Event Listeners ──────────────────────────────────────────────────────
+
     initializeEventListeners() {
         // Mobile menu toggle
         const menuToggle = document.querySelector('.menu-toggle');
@@ -225,15 +307,15 @@ class WeatherDashboard {
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                
+
                 // Remove active class from all links
                 navLinks.forEach(l => l.parentElement.classList.remove('active'));
-                
+
                 // Add active class to clicked link
                 link.parentElement.classList.add('active');
-                
+
                 // Close mobile menu
-                sidebar.classList.remove('open');
+                if (sidebar) sidebar.classList.remove('open');
             });
         });
 
@@ -262,130 +344,133 @@ class WeatherDashboard {
         }
     }
 
-    // Load weather data
-    loadWeatherData() {
-        this.populateHourlyForecast();
-        this.populateWeatherAlerts();
-        this.animateWeatherStats();
-    }
+    // ─── Hourly Forecast Table ────────────────────────────────────────────────
 
-    // Populate hourly forecast table
-    populateHourlyForecast() {
+    populateHourlyForecast(list) {
         const tbody = document.getElementById('hourlyForecastBody');
         if (!tbody) return;
 
-        const hourlyData = [
-            { time: '00:00', temp: '26°C', wind: '8 km/h NW', humidity: '80%', precip: '0%' },
-            { time: '03:00', temp: '25°C', wind: '6 km/h N', humidity: '85%', precip: '10%' },
-            { time: '06:00', temp: '24°C', wind: '5 km/h NE', humidity: '90%', precip: '20%' },
-            { time: '09:00', temp: '27°C', wind: '8 km/h E', humidity: '75%', precip: '5%' },
-            { time: '12:00', temp: '30°C', wind: '12 km/h SE', humidity: '65%', precip: '0%' },
-            { time: '15:00', temp: '32°C', wind: '15 km/h S', humidity: '60%', precip: '0%' },
-            { time: '18:00', temp: '29°C', wind: '10 km/h SW', humidity: '70%', precip: '15%' },
-            { time: '21:00', temp: '28°C', wind: '9 km/h W', humidity: '75%', precip: '5%' }
-        ];
+        if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No forecast data available.</td></tr>';
+            return;
+        }
 
-        tbody.innerHTML = hourlyData.map(hour => `
+        const entries = list.slice(0, 8);
+        tbody.innerHTML = entries.map(entry => {
+            const time = this.formatTime(entry.dt_txt);
+            const temp = `${entry.main.temp.toFixed(1)}°C`;
+            const windKmh = (entry.wind.speed * 3.6).toFixed(1);
+            const windDir = this.degreesToCompass(entry.wind.deg);
+            const wind = `${windKmh} km/h ${windDir}`;
+            const humidity = `${entry.main.humidity}%`;
+            const precip = `${Math.round((entry.pop || 0) * 100)}%`;
+            return `
             <tr>
-                <td>${hour.time}</td>
-                <td>${hour.temp}</td>
-                <td>${hour.wind}</td>
-                <td>${hour.humidity}</td>
-                <td>${hour.precip}</td>
-            </tr>
-        `).join('');
+                <td>${time}</td>
+                <td>${temp}</td>
+                <td>${wind}</td>
+                <td>${humidity}</td>
+                <td>${precip}</td>
+            </tr>`;
+        }).join('');
     }
 
-    // Populate weather alerts table
-    populateWeatherAlerts() {
+    // ─── Weather Alerts Table ─────────────────────────────────────────────────
+
+    populateWeatherAlerts(alerts) {
         const tbody = document.getElementById('weatherAlertsBody');
         if (!tbody) return;
 
-        const alertsData = [
-            { type: 'Heat Advisory', severity: 'moderate', description: 'High temperatures expected', validUntil: '2024-01-20 18:00' },
-            { type: 'Wind Warning', severity: 'low', description: 'Moderate winds in coastal areas', validUntil: '2024-01-19 12:00' },
-            { type: 'Rain Alert', severity: 'low', description: 'Light rain expected in the evening', validUntil: '2024-01-19 22:00' }
-        ];
+        if (!alerts || alerts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active weather alerts</td></tr>';
+            return;
+        }
 
-        tbody.innerHTML = alertsData.map(alert => `
+        tbody.innerHTML = alerts.map(alert => `
             <tr>
-                <td>${alert.type}</td>
-                <td><span class="weather-status severity-${alert.severity}">${alert.severity}</span></td>
+                <td>${alert.event}</td>
+                <td><span class="weather-status severity-moderate">Alert</span></td>
                 <td>${alert.description}</td>
-                <td>${new Date(alert.validUntil).toLocaleString()}</td>
+                <td>${new Date(alert.end * 1000).toLocaleString()}</td>
             </tr>
         `).join('');
     }
 
-    // Animate weather statistics
-    animateWeatherStats() {
-        const statValues = document.querySelectorAll('.weather-card .stat-content h3');
-        
-        statValues.forEach((element) => {
-            const targetValue = element.textContent;
-            if (!targetValue) return;
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-            // Extract numeric value
-            const numericValue = parseFloat(targetValue.replace(/[^0-9.-]/g, ''));
-            if (isNaN(numericValue)) return;
-
-            // Animate the number
-            Helpers.animateNumber(element, numericValue, 1000);
-        });
+    // Format "2026-05-16 12:00:00" -> "12:00"
+    formatTime(dtTxt) {
+        if (!dtTxt) return '';
+        const parts = dtTxt.split(' ');
+        return parts[1] ? parts[1].substring(0, 5) : dtTxt;
     }
 
-    // Update forecast chart based on period
+    // Convert wind degrees to compass direction
+    degreesToCompass(deg) {
+        const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        const index = Math.round(((deg % 360) / 45)) % 8;
+        return directions[index];
+    }
+
+    // ─── Chart Period Selector ────────────────────────────────────────────────
+
+    // Update forecast chart based on period selector (uses cached API data when available)
     updateForecastChart(period) {
         if (!this.temperatureChart) return;
 
-        let newData = [];
-        let newLabels = [];
-
-        switch (period) {
-            case 'Next 24 hours':
-                newLabels = ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'];
-                newData = [26, 25, 24, 27, 30, 32, 29, 28];
-                break;
-            case 'Next 7 days':
-                newLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                newData = [28, 30, 29, 31, 33, 32, 30];
-                break;
-            case 'Next 14 days':
-                newLabels = ['Week 1', 'Week 2'];
-                newData = [29.5, 31.2];
-                break;
-            default:
-                return;
+        if (this.forecastList && this.forecastList.length > 0) {
+            let entries;
+            switch (period) {
+                case 'Next 24 hours':
+                    entries = this.forecastList.slice(0, 8);
+                    break;
+                case 'Next 7 days':
+                    // One entry per day (every 8th entry = 24h apart)
+                    entries = this.forecastList.filter((_, i) => i % 8 === 0).slice(0, 7);
+                    break;
+                case 'Next 14 days':
+                    entries = this.forecastList.filter((_, i) => i % 8 === 0);
+                    break;
+                default:
+                    entries = this.forecastList.slice(0, 8);
+            }
+            this.temperatureChart.data.labels = entries.map(e => {
+                if (period === 'Next 24 hours') return this.formatTime(e.dt_txt);
+                // For multi-day, show date portion
+                return e.dt_txt ? e.dt_txt.split(' ')[0].substring(5) : '';
+            });
+            this.temperatureChart.data.datasets[0].data = entries.map(e => e.main.temp);
+            this.temperatureChart.update();
         }
-
-        this.temperatureChart.data.labels = newLabels;
-        this.temperatureChart.data.datasets[0].data = newData;
-        this.temperatureChart.update();
     }
 
-    // Refresh weather data
-    refreshWeatherData() {
+    // ─── Refresh Methods ──────────────────────────────────────────────────────
+
+    // Refresh all weather data (re-fetches from API)
+    async refreshWeatherData() {
         console.log('Refreshing weather data...');
-        this.loadWeatherData();
-        
+        await this.fetchAndRender();
+
         if (this.weatherMap) {
             this.weatherMap.setView(this.currentLocation.lat, this.currentLocation.lon);
         }
     }
 
-    // Refresh forecast data
-    refreshForecastData() {
+    // Refresh forecast section only
+    async refreshForecastData() {
         console.log('Refreshing forecast data...');
-        this.populateHourlyForecast();
+        await this.fetchAndRender();
     }
 
-    // Refresh weather alerts
-    refreshWeatherAlerts() {
+    // Refresh alerts section only
+    async refreshWeatherAlerts() {
         console.log('Refreshing weather alerts...');
-        this.populateWeatherAlerts();
+        // The 5-day forecast API does not return alerts; re-render with empty list
+        this.populateWeatherAlerts([]);
     }
 
-    // Public methods for external use
+    // ─── Public API ───────────────────────────────────────────────────────────
+
     refreshAll() {
         this.refreshWeatherData();
     }
