@@ -8,11 +8,6 @@ class WeatherDashboard {
         this.apiKey = 'c77f6cae2743fcd686c29b44e574e221';
         this.apiEndpoint = 'https://api.openweathermap.org/data/2.5/forecast';
         this.forecastList = []; // Cached forecast entries from API
-<<<<<<< HEAD
-        this.hourlyDayOffset = 0; // 0 = today, 1 = tomorrow, etc.
-        this.uniqueDays = []; // list of YYYY-MM-DD strings present in forecastList
-=======
->>>>>>> 59d2010 (have postman)
 
         this.init();
     }
@@ -42,32 +37,11 @@ class WeatherDashboard {
             }
             const data = await response.json();
             this.forecastList = data.list || [];
-<<<<<<< HEAD
-
-            // Build unique date list (YYYY-MM-DD) for day navigation
-            this.uniqueDays = Array.from(new Set(this.forecastList.map(e => e.dt_txt ? e.dt_txt.split(' ')[0] : ''))).filter(Boolean);
-            if (this.uniqueDays.length === 0) {
-                // Fallback: keep using first 5 days by slicing timestamps
-                this.uniqueDays = this.forecastList.slice(0, 40).map(e => e.dt_txt ? e.dt_txt.split(' ')[0] : '').filter(Boolean);
-                this.uniqueDays = Array.from(new Set(this.uniqueDays));
-            }
-
-            // Reset offset if out of range
-            if (this.hourlyDayOffset >= this.uniqueDays.length) this.hourlyDayOffset = Math.max(0, this.uniqueDays.length - 1);
-
-            this.renderStatCards(this.forecastList);
-            this.updateTemperatureChart(this.forecastList);
-            this.updateWindChart(this.forecastList);
-            this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
-            this.populateWeatherAlerts([]);
-            this.updateForecastDayControls();
-=======
             this.renderStatCards(this.forecastList);
             this.updateTemperatureChart(this.forecastList);
             this.updateWindChart(this.forecastList);
             this.populateHourlyForecast(this.forecastList);
             this.populateWeatherAlerts([]);
->>>>>>> 59d2010 (have postman)
         } catch (error) {
             console.error('Failed to fetch weather data:', error);
             this.showErrorState(error.message);
