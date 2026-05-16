@@ -44,7 +44,7 @@
                 <li class="nav-item">
                     <a href="Map.html" class="nav-link">
                         <i class="fas fa-map"></i>
-                        <span>Map</span>
+                        <span>Farm Manager</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -73,10 +73,6 @@
                     <h1>Today's Recommendation</h1>
                 </div>
                 <div class="header-right">
-                    <div class="notifications">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">2</span>
-                    </div>
                   <div class="user-profile">
                         <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
                         <span>John Durian</span>
@@ -159,6 +155,12 @@
                             <button id="addReminderBtn" class="btn-primary" style="padding:0.45rem 0.75rem; border-radius:6px;">Add Reminder</button>
                         </div>
                     </div>
+                    <div id="recommendedReminders" style="margin-top:1rem;">
+                      <h4 style="margin:0 0 0.5rem 0;">Recommended from Sensor History</h4>
+                      <div id="recommendedReminderList" style="display:grid; gap:0.75rem;">
+                        <p style="margin:0; color:#64748b; background:#f8fafc; padding:0.75rem; border-radius:6px;">Checking sensor history...</p>
+                      </div>
+                    </div>
                     <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
                       <div style="flex:1; min-width:260px;">
                         <h4 style="margin:0 0 0.5rem 0;">This Week</h4>
@@ -186,28 +188,28 @@
                             <div class="icon">
                                 <i class="fas fa-thermometer-half"></i>
                             </div>
-                            <div class="value">28°C</div>
+                            <div class="value" id="recommendationWeatherTemp">Loading...</div>
                             <div class="label">Temperature</div>
                         </div>
                         <div class="weather-item">
                             <div class="icon">
                                 <i class="fas fa-tint"></i>
                             </div>
-                            <div class="value">75%</div>
+                            <div class="value" id="recommendationWeatherHumidity">Loading...</div>
                             <div class="label">Humidity</div>
                         </div>
                         <div class="weather-item">
                             <div class="icon">
                                 <i class="fas fa-wind"></i>
                             </div>
-                            <div class="value">12 km/h</div>
+                            <div class="value" id="recommendationWeatherWind">Loading...</div>
                             <div class="label">Wind Speed</div>
                         </div>
                         <div class="weather-item">
                             <div class="icon">
                                 <i class="fas fa-cloud-rain"></i>
                             </div>
-                            <div class="value">20%</div>
+                            <div class="value" id="recommendationWeatherRain">Loading...</div>
                             <div class="label">Rain Chance</div>
                         </div>
                     </div>
@@ -735,8 +737,10 @@
       });
 
       // expose for debug
-      window._reminderHelpers = { loadReminders, loadArchive };
+      window._reminderHelpers = { loadReminders, loadArchive, addReminder, renderReminders };
     })();
     </script>
+    <script src="js/recommendation-history.js"></script>
+    <script src="js/recommendation-weather.js"></script>
 </body>
 </html>

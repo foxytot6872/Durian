@@ -87,8 +87,8 @@ class ZoneNavigationManager {
         localStorage.setItem('selectedZone', zone);
         localStorage.setItem('selectedZoneName', zoneName);
         
-        // Navigate to Map page
-        window.location.href = 'Map.html';
+        // Navigate to this zone in Farm Manager
+        window.location.href = `Map.html#zone-${zone}`;
     }
     
     setupHoverEffects() {
@@ -137,6 +137,20 @@ class CameraFeedManager {
         this.waitForFirebase();
         this.updateZoneContent();
         this.setupCameraControls();
+    }
+
+    setZone(zone, zoneName = null) {
+        this.currentZone = zone;
+        localStorage.setItem('selectedZone', zone);
+        localStorage.setItem('selectedZoneName', zoneName || this.zoneData.get(zone)?.name || `Zone ${zone}`);
+        this.currentFeedUrl = null;
+        this.isLoadingFeed = false;
+
+        this.updateZoneContent();
+        this.updateZoneMetricsFromFirebase();
+        this.setupCameraFeed();
+        this.generateStatusCards();
+        this.updateFieldStatusTable();
     }
 
     waitForFirebase() {
@@ -713,14 +727,6 @@ class CameraFeedManager {
     }
     
     setupCameraControls() {
-        // Back button functionality
-        const backBtn = document.getElementById('backBtn');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                window.location.href = 'index.html';
-            });
-        }
-        
         // Fullscreen functionality
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         if (fullscreenBtn) {
@@ -1174,6 +1180,6 @@ document.addEventListener('DOMContentLoaded', () => {
         new ZoneNavigationManager();
     } else if (currentPage.includes('Map.html') || currentPage.includes('map.html') || currentPage.includes('Map') || currentPage.includes('map')) {
         console.log('Initializing CameraFeedManager');
-        new CameraFeedManager();
+        window.cameraFeedManager = new CameraFeedManager();
     }
 });

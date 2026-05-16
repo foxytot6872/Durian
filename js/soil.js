@@ -32,7 +32,12 @@ class SoilDashboard {
                 this.updateSoilDisplay();
                 this.updateTrendDisplay();
             });
-            
+
+            window.addEventListener('virtual-sensors:test-scenario-change', () => {
+                this.updateSoilDisplay();
+                this.updateTrendDisplay();
+            });
+
             // Initial update
             this.loadZones();
             this.updateSoilDisplay();
@@ -67,13 +72,13 @@ class SoilDashboard {
         if (!this.firebaseDashboard) return;
 
         const allDevices = this.firebaseDashboard.getDevices();
-        
+
         // Group devices by zone
         const zonesMap = new Map();
         for (const device of allDevices) {
             const zone = device.zone;
             if (!zone) continue;
-            
+
             if (!zonesMap.has(zone)) {
                 zonesMap.set(zone, []);
             }
@@ -104,7 +109,7 @@ class SoilDashboard {
         }
 
         container.innerHTML = '';
-        
+
         this.zones.forEach(zone => {
             const zoneLetter = zone.replace('Zone ', '').trim();
             const button = document.createElement('button');
@@ -112,7 +117,7 @@ class SoilDashboard {
             button.setAttribute('data-zone', zoneLetter);
             button.textContent = zone;
             button.style.cssText = 'padding: 0.5rem 1rem; border: 2px solid #ddd; background: white; color: #333; border-radius: 5px; cursor: pointer;';
-            
+
             if (this.selectedZone === zone) {
                 button.classList.add('active');
                 button.style.background = '#4CAF50';
@@ -158,7 +163,7 @@ class SoilDashboard {
         const device = devices[0];
         if (device.sensorData && device.sensorData.timestamp) {
             const timestamp = this.formatTimestamp(device.sensorData.timestamp);
-            statusEl.innerHTML = `✅ Live data from ${this.selectedZone} - Last update: ${timestamp}`;
+            statusEl.innerHTML = `Live data from ${this.selectedZone} - Last update: ${timestamp}`;
             statusEl.style.background = '#d4edda';
             statusEl.style.color = '#155724';
         } else {
@@ -398,7 +403,7 @@ class SoilDashboard {
     updateMetric(elementId, value, unit, statusId, statusFn, isDecimal = false) {
         const element = document.getElementById(elementId);
         const statusElement = document.getElementById(statusId);
-        
+
         if (element) {
             if (value !== undefined && value !== null) {
                 if (isDecimal) {
@@ -424,12 +429,12 @@ class SoilDashboard {
     clearDisplay() {
         const metrics = ['soil-moisture', 'soil-ph', 'soil-temperature', 'soil-ec', 'soil-nitrogen', 'soil-phosphorus', 'soil-potassium'];
         const statuses = ['moisture-change', 'ph-status', 'temp-change', 'ec-status', 'nitrogen-status', 'phosphorus-status', 'potassium-status'];
-        
+
         metrics.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.textContent = '--';
         });
-        
+
         statuses.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -443,18 +448,18 @@ class SoilDashboard {
 
     formatTimestamp(timestamp) {
         if (!timestamp) return 'Never';
-        
+
         const now = Date.now();
         const diff = now - timestamp;
-        
+
         if (diff > 86400000) {
             return 'Just now';
         }
-        
+
         const seconds = Math.floor(diff / 1000);
         const minutes = Math.floor(seconds / 60);
         const hours = Math.floor(minutes / 60);
-        
+
         if (hours > 0) {
             return `${hours} hour${hours > 1 ? 's' : ''} ago`;
         } else if (minutes > 0) {

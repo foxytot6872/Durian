@@ -94,6 +94,14 @@
 }
 
 /* Weather Cards */
+.weather-card {
+    min-width: 0;
+}
+
+.stats-grid:has(.weather-card) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .weather-card .stat-icon {
     background: linear-gradient(135deg, #4facfe, #00f2fe);
 }
@@ -114,6 +122,88 @@
     background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
+<<<<<<< Updated upstream
+=======
+.weather-date {
+    margin: -0.25rem 0 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748b;
+    text-align: right;
+}
+
+.weather-updated {
+    margin: -1rem 0 1.5rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-align: right;
+}
+
+.forecast-day-controls {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.forecast-day-btn,
+.forecast-day-today,
+.forecast-day-label {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #dbe5ef;
+    border-radius: 0.5rem;
+    color: #334155;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 0.875rem;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0.45rem 0.75rem;
+}
+
+.forecast-day-btn {
+    width: 38px;
+    padding: 0;
+}
+
+.forecast-day-label {
+    background: #e8f5ea;
+    border-color: #9bd3a1;
+    color: #166534;
+    min-width: 92px;
+}
+
+.forecast-day-btn:hover,
+.forecast-day-today:hover,
+.forecast-day-label:hover {
+    border-color: #9bd3a1;
+    color: #166534;
+}
+
+.forecast-day-btn:disabled,
+.forecast-day-today:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.hourly-condition {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.5rem;
+    min-width: 132px;
+    text-transform: capitalize;
+}
+
+.hourly-condition i {
+    color: #4ba252;
+    font-size: 1rem;
+    width: 18px;
+}
+
+>>>>>>> Stashed changes
 /* Weather Charts */
 #temperatureChart,
 #windChart {
@@ -225,32 +315,48 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
+    .stats-grid:has(.weather-card) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .map-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .overlay-controls,
     .level-controls {
         justify-content: space-between;
     }
 }
 
+.tables-grid {
+    margin-bottom: 2.5rem !important;
+}
+
+.charts-grid {
+    margin-top: 0;
+}
+
 @media (max-width: 768px) {
+    .stats-grid:has(.weather-card) {
+        grid-template-columns: 1fr;
+    }
+
     .map-header {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .map-controls {
         gap: 0.75rem;
     }
-    
+
     .overlay-controls select,
     .level-controls select {
         min-width: 100px;
     }
-    
+
     .map-container {
         height: 400px;
     }
@@ -260,17 +366,17 @@
     .map-container {
         height: 300px;
     }
-    
+
     .map-controls {
         flex-direction: column;
     }
-    
+
     .overlay-controls,
     .level-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .overlay-controls select,
     .level-controls select {
         min-width: auto;
@@ -318,6 +424,7 @@
         opacity: 0.5;
         transform: scale(0.95);
     }
+
     100% {
         opacity: 1;
         transform: scale(1);

@@ -450,7 +450,7 @@ class FirebaseDashboardManager {
                 e.preventDefault();
                 localStorage.setItem('selectedZone', zoneLetter);
                 localStorage.setItem('selectedZoneName', zoneName);
-                window.location.href = 'Map.html';
+                window.location.href = `Map.html#zone-${zoneLetter}`;
             });
 
             zonesGrid.appendChild(zoneCard);
@@ -579,6 +579,10 @@ let dashboardManager = null;
 document.addEventListener('DOMContentLoaded', () => {
     dashboardManager = new FirebaseDashboardManager();
     window.firebaseDashboard = dashboardManager;
+
+    window.addEventListener('virtual-sensors:test-scenario-change', () => {
+        dashboardManager.applyVirtualSensorReadings();
+    });
 });
 
 export { FirebaseDashboardManager };
