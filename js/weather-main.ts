@@ -21,14 +21,14 @@ interface ForecastData {
 class WeatherAPIManager {
     private apiKey: string = 'your-api-key-here';
     private baseUrl: string = 'https://api.openweathermap.org/data/2.5';
-    
+
     async getCurrentWeather(lat: number, lon: number): Promise<WeatherData> {
         try {
             const response = await fetch(
                 `${this.baseUrl}/weather?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=metric`
             );
             const data = await response.json();
-            
+
             return {
                 temperature: Math.round(data.main.temp),
                 humidity: data.main.humidity,
@@ -41,7 +41,7 @@ class WeatherAPIManager {
             return this.getDefaultWeatherData();
         }
     }
-    
+
     private getDefaultWeatherData(): WeatherData {
         return {
             temperature: 28,
@@ -57,18 +57,18 @@ class WeatherAPIManager {
 class WeatherMapManager {
     private mapContainer: HTMLElement | null;
     private map: any;
-    
+
     constructor() {
         this.mapContainer = document.getElementById('weatherMap');
         this.init();
     }
-    
+
     private init(): void {
         if (this.mapContainer) {
             this.initializeMap();
         }
     }
-    
+
     private initializeMap(): void {
         // Initialize weather map using Windy API
         if (typeof windyInit === 'function') {
@@ -82,7 +82,7 @@ class WeatherMapManager {
             this.showMapPlaceholder();
         }
     }
-    
+
     private showMapPlaceholder(): void {
         if (this.mapContainer) {
             this.mapContainer.innerHTML = `
@@ -99,20 +99,20 @@ class WeatherMapManager {
 // Weather chart management
 class WeatherChartManager {
     private charts: Map<string, any> = new Map();
-    
+
     constructor() {
         this.initCharts();
     }
-    
+
     private initCharts(): void {
         this.initTemperatureChart();
         this.initHumidityChart();
     }
-    
+
     private initTemperatureChart(): void {
         const ctx = document.getElementById('temperatureChart') as HTMLCanvasElement;
         if (!ctx) return;
-        
+
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -156,14 +156,14 @@ class WeatherChartManager {
                 }
             }
         });
-        
+
         this.charts.set('temperature', chart);
     }
-    
+
     private initHumidityChart(): void {
         const ctx = document.getElementById('humidityChart') as HTMLCanvasElement;
         if (!ctx) return;
-        
+
         const chart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -206,7 +206,7 @@ class WeatherChartManager {
                 }
             }
         });
-        
+
         this.charts.set('humidity', chart);
     }
 }
@@ -214,26 +214,26 @@ class WeatherChartManager {
 // Navigation management (shared)
 class NavigationManager {
     private navLinks: NodeListOf<HTMLAnchorElement>;
-    
+
     constructor() {
         this.navLinks = document.querySelectorAll('.nav-link');
         this.init();
     }
-    
+
     private init(): void {
         this.setupEventListeners();
         this.debugNavigation();
     }
-    
+
     private setupEventListeners(): void {
         this.navLinks.forEach((link) => {
             link.addEventListener('click', (e) => this.handleNavigation(e, link));
         });
     }
-    
+
     private handleNavigation(event: Event, link: HTMLAnchorElement): void {
         console.log('Link clicked:', link.href);
-        
+
         if (link.href && link.href !== '#' && !link.href.includes('#')) {
             console.log('Navigating to:', link.href);
             window.location.href = link.href;
@@ -241,10 +241,10 @@ class NavigationManager {
             console.log('Invalid or hash link:', link.href);
         }
     }
-    
+
     private debugNavigation(): void {
         console.log('Found', this.navLinks.length, 'navigation links');
-        
+
         this.navLinks.forEach((link, index) => {
             console.log(`Link ${index}:`, link.href, link.textContent?.trim());
         });
@@ -255,19 +255,19 @@ class NavigationManager {
 class MobileMenuManager {
     private menuToggle: HTMLButtonElement | null;
     private sidebar: HTMLElement | null;
-    
+
     constructor() {
         this.menuToggle = document.querySelector('.menu-toggle');
         this.sidebar = document.querySelector('.sidebar');
         this.init();
     }
-    
+
     private init(): void {
         if (this.menuToggle && this.sidebar) {
             this.menuToggle.addEventListener('click', () => this.toggleSidebar());
         }
     }
-    
+
     private toggleSidebar(): void {
         if (this.sidebar) {
             this.sidebar.classList.toggle('open');
