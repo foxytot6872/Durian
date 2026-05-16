@@ -1,12 +1,12 @@
 {
-  "name": "durian-dashboard",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "start": "node scripts/dev-all.js",
-    "dev": "node scripts/dev-all.js",
-    "start:web": "npx --yes http-server . -p 5500 -c-1",
-    "dev:web": "npx --yes http-server . -p 5500 -c-1",
-    "dev:all": "node scripts/dev-all.js"
-  }
+	"name": "durian-dashboard",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"start": "node scripts/dev-all.js",
+		"dev": "node scripts/dev-all.js",
+		"start:web": "npx --yes http-server . -p 5500 -c-1",
+		"dev:web": "npx --yes http-server . -p 5500 -c-1",
+		"dev:all": "node scripts/dev-all.js"
+	}
 }

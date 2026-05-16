@@ -43,6 +43,21 @@ npm install
 npm start
 ```
 
+### Firebase Gemini Chatbot Setup
+
+If you want to deploy the Gemini chatbot backend, use the dedicated Firebase Functions folder:
+
+```powershell
+cd functions
+npm install
+firebase functions:secrets:set GEMINI_KEY
+firebase deploy --only functions
+```
+
+When prompted for the secret value, paste your Gemini API key and press Enter. Do not leave it blank.
+
+The chatbot code lives in [functions/index.js](functions/index.js) and reads the secret with `defineSecret('GEMINI_KEY')`.
+
 ### File Structure
 
 ```

@@ -162,6 +162,21 @@
                     <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
                       <div style="flex:1; min-width:260px;">
                         <h4 style="margin:0 0 0.5rem 0;">This Week</h4>
+
+                        <!-- System suggested weekly recommendation -->
+                        <div id="suggestedReminderCard" style="margin-bottom:0.75rem;">
+                          <div class="reminder-item" style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem;background:#f0fff4;border-radius:8px;border:1px solid #e6f4ea;">
+                            <div style="flex:1;">
+                              <div style="font-weight:600;color:#064e3b;">Fertilize Recommendation</div>
+                              <div style="font-size:0.9rem;color:#065f46;">Suggested weekly task — low fertilizer detected</div>
+                              <div id="suggestedDate" style="font-size:0.85rem;color:#065f46;margin-top:0.25rem;"></div>
+                            </div>
+                            <div style="display:flex;gap:0.35rem;margin-left:1rem">
+                              <button type="button" id="addSuggestedReminder" class="btn-primary" style="padding:0.35rem 0.6rem;border-radius:6px;background:linear-gradient(135deg,#4ba252,#274b2d);color:white;border:none;cursor:pointer;">Add</button>
+                            </div>
+                          </div>
+                        </div>
+
                         <div id="remindersWeek" style="color:#334155; background:#f8fafc; padding:0.5rem; border-radius:6px; min-height:40px;">
                           <p style="margin:0; color:#64748b;">No reminders for this week.</p>
                         </div>
@@ -630,10 +645,14 @@
           const title = escapeHtml(r.title || 'Reminder');
           const notes = escapeHtml(r.notes || '');
           const doneClass = r.done ? 'opacity:0.6;text-decoration:line-through;' : '';
+          const isSuggested = r.suggested ? true : false;
+          const suggestedBadge = isSuggested ? '<span style="background:linear-gradient(135deg,#4ba252,#274b2d);color:white;padding:0.15rem 0.4rem;border-radius:4px;font-size:0.75rem;margin-left:0.5rem;">Suggested</span>' : '';
+          const itemWrapperStyle = isSuggested ? 'background:#f0fff4;border-radius:8px;border:1px solid #e6f4ea;padding:0.35rem;' : '';
+
           return `
-            <div class="reminder-item" data-id="${r.id}" style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #e6eef6;">
+            <div class="reminder-item" data-id="${r.id}" style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #e6eef6; ${itemWrapperStyle}">
               <div style="flex:1; ${doneClass}">
-                <div style="font-weight:600;color:#0f172a;">${title}</div>
+                <div style="font-weight:600;color:#0f172a;">${title} ${suggestedBadge}</div>
                 <div style="font-size:0.9rem;color:#475569;">${dt}</div>
                 <div style="font-size:0.9rem;color:#64748b;margin-top:0.25rem;">${notes}</div>
               </div>
@@ -692,6 +711,20 @@
         const idx = all.findIndex(r => r.id === id);
         if (idx === -1) return;
         all[idx].done = !all[idx].done;
+        // if this was a system suggested reminder and was just marked done, auto-schedule next week's suggestion
+        try {
+          if (all[idx].suggested && all[idx].done) {
+            const original = all[idx];
+            const nextWeekDate = new Date(new Date(original.datetime).getTime() + 7*24*60*60*1000);
+            const nextRem = Object.assign({}, original, { id: `r_${Date.now()}`, done: false, datetime: nextWeekDate.toISOString() });
+            // ensure we don't duplicate next week's suggestion if already present
+            const exists = all.some(x => x.title === nextRem.title && Math.abs(new Date(x.datetime).getTime() - new Date(nextRem.datetime).getTime()) < (12*60*60*1000));
+            if (!exists) {
+              all.push(nextRem);
+            }
+          }
+        } catch (err) { console.error('Error scheduling next suggestion', err); }
+
         saveReminders(all);
         renderReminders();
       }
@@ -732,6 +765,43 @@
         const addBtn = document.getElementById('addReminderBtn');
         if (addBtn) addBtn.addEventListener('click', showAddReminderPrompt);
         renderReminders();
+
+        // suggested weekly reminder wiring
+        const suggestedCardDate = document.getElementById('suggestedDate');
+        const addSuggested = document.getElementById('addSuggestedReminder');
+        if (suggestedCardDate) {
+          const oneWeek = new Date(Date.now() + 7*24*60*60*1000);
+          suggestedCardDate.textContent = new Date(oneWeek).toLocaleString();
+        }
+        if (addSuggested) {
+          addSuggested.addEventListener('click', (e) => {
+            e.preventDefault();
+            try {
+              addSuggested.disabled = true;
+              const oneWeek = new Date(Date.now() + 7*24*60*60*1000);
+              const newRem = { title: 'Fertilize Recommendation', datetime: oneWeek.toISOString(), notes: 'Auto-suggested: low fertilization detected. Adjust NPK accordingly.', suggested: true };
+
+              // prevent duplicate suggested reminders (same title within 24 hours of target)
+              const existing = loadReminders();
+              const dup = existing.some(x => x.title === newRem.title && Math.abs(new Date(x.datetime).getTime() - new Date(newRem.datetime).getTime()) < (24*60*60*1000));
+              if (dup) {
+                alert('A similar suggested reminder already exists in your list.');
+                return;
+              }
+
+              console.log('Adding suggested reminder', newRem);
+              addReminder(newRem);
+              // ensure UI refresh
+              renderReminders();
+              alert('Suggested reminder added to your list for next week.');
+            } catch (err) {
+              console.error('Failed to add suggested reminder', err);
+              alert('Unable to add reminder — check console for details.');
+            } finally {
+              addSuggested.disabled = false;
+            }
+          });
+        }
       });
 
       // expose for debug
