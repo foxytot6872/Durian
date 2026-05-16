@@ -15,7 +15,7 @@
     if (typeof window.authService === 'undefined') {
         console.error('auth-service.js must be loaded before route-protection.js');
         // Still redirect to login if service isn't available
-        if (!window.location.pathname.includes('login.html') && 
+        if (!window.location.pathname.includes('login.html') &&
             !window.location.pathname.includes('register.html')) {
             window.location.href = 'login.html';
         }
@@ -60,7 +60,7 @@
             // Store the attempted URL to redirect back after login
             const currentUrl = window.location.href;
             sessionStorage.setItem('redirectAfterLogin', currentUrl);
-            
+
             // Redirect to login
             window.location.href = 'login.html';
         }
