@@ -12,7 +12,8 @@ class FarmDashboard {
     }
 
     populateAlerts() {
-        const alertsData = [
+        const virtualAlerts = window.VirtualSensorData ? window.VirtualSensorData.getAlerts() : [];
+        const alertsData = virtualAlerts.length ? virtualAlerts : [
             {
                 type: 'Soil Moisture',
                 description: 'Zone C soil moisture below optimal level',
@@ -204,12 +205,15 @@ class FarmDashboard {
         // Check if Firebase Dashboard Manager is available
         if (window.firebaseDashboard) {
             console.log('✅ Firebase Dashboard Manager connected');
+            window.firebaseDashboard.onUpdate(() => this.populateAlerts());
         } else {
             console.log('⏳ Waiting for Firebase Dashboard Manager...');
             // Retry after a delay
             setTimeout(() => {
                 if (window.firebaseDashboard) {
                     console.log('✅ Firebase Dashboard Manager now available');
+                    window.firebaseDashboard.onUpdate(() => this.populateAlerts());
+                    this.populateAlerts();
                 }
             }, 2000);
         }

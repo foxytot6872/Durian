@@ -2,6 +2,7 @@
 // Reads sensor data from Firebase Realtime Database per FIREBASE_RTDB_ARCHITECTURE.md
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 import { auth } from './firebase-config.js';
+import { virtualSensorData } from './virtual-sensor-data.js';
 
 // Database URL (from Firebase config)
 const DB_URL = "https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -54,6 +55,7 @@ class FirebaseDashboardManager {
             if (!response.ok) {
                 if (response.status === 404) {
                     console.log('📭 No devices found for user');
+                    this.startVirtualSensorFeed();
                     return;
                 }
                 throw new Error(`HTTP ${response.status}`);
@@ -63,6 +65,7 @@ class FirebaseDashboardManager {
 
             if (!devicesData) {
                 console.log('📭 No devices found');
+                this.startVirtualSensorFeed();
                 return;
             }
 
@@ -77,8 +80,10 @@ class FirebaseDashboardManager {
 
             // Trigger dashboard update
             this.updateDashboard();
+            this.startVirtualSensorFeed();
         } catch (error) {
             console.error('❌ Error loading user devices:', error);
+            this.startVirtualSensorFeed();
         }
     }
 
@@ -112,40 +117,48 @@ class FirebaseDashboardManager {
 
         // Setup real-time listener for sensor data (ESP32 devices only)
         if (deviceType === 'sensor') {
+            await this.fetchSensorData(deviceId);
             const pollInterval = setInterval(async () => {
-                try {
-                    const url = `${DB_URL}/users/${this.currentUser.uid}/devices/${deviceId}/sensor_data.json?auth=${this.idToken}`;
-                    const response = await fetch(url);
-
-                    if (response.ok) {
-                        const sensorData = await response.json();
-                        if (sensorData) {
-                            this.updateDeviceSensorData(deviceId, sensorData);
-                        }
-                    } else if (response.status === 404) {
-                        // No sensor data yet
-                        console.log(`📭 No sensor data for device ${deviceId}`);
-                    }
-                } catch (error) {
-                    console.error(`❌ Error fetching sensor data for ${deviceId}:`, error);
-                }
-            }, 5000); // Poll every 5 seconds
-
-            // Store cleanup function
+                await this.fetchSensorData(deviceId);
+            }, 5 * 60 * 1000);
             this.sensorListeners.set(deviceId, () => clearInterval(pollInterval));
         }
 
         // Setup real-time listener for camera feeds (Pi devices only)
         if (deviceType === 'camera_server') {
-            const pollInterval = setInterval(async () => {
-                await this.loadCameraFeeds(deviceId);
-            }, 5000); // Poll every 5 seconds
-
-            // Store cleanup function
-            this.sensorListeners.set(deviceId, () => clearInterval(pollInterval));
+            this.sensorListeners.set(deviceId, () => {});
         }
 
         console.log(`✅ Listener setup for device: ${deviceId} (${deviceInfo.name}) - Type: ${deviceType}`);
+    }
+
+    async fetchSensorData(deviceId) {
+        const device = this.devices.get(deviceId);
+        if (!device || !this.currentUser || !this.idToken) return;
+
+        try {
+            const url = `${DB_URL}/users/${this.currentUser.uid}/devices/${deviceId}/sensor_data.json?auth=${this.idToken}`;
+            const response = await fetch(url);
+
+            if (response.ok) {
+                const sensorData = await response.json();
+                if (sensorData) {
+                    this.updateDeviceSensorData(deviceId, sensorData);
+                } else if (!device.sensorData) {
+                    this.updateDeviceSensorData(deviceId, this.getVirtualReadingForZone(device.zone));
+                }
+            } else if (response.status === 404) {
+                console.log(`📭 No sensor data for device ${deviceId}`);
+                if (!device.sensorData) {
+                    this.updateDeviceSensorData(deviceId, this.getVirtualReadingForZone(device.zone));
+                }
+            }
+        } catch (error) {
+            console.error(`❌ Error fetching sensor data for ${deviceId}:`, error);
+            if (!device.sensorData) {
+                this.updateDeviceSensorData(deviceId, this.getVirtualReadingForZone(device.zone));
+            }
+        }
     }
 
     /**
@@ -197,6 +210,45 @@ class FirebaseDashboardManager {
     }
 
     /**
+     * Feed virtual sensor values when real sensors are unavailable.
+     * The generated values include 14 days of hourly Rangsit-inspired history.
+     */
+    startVirtualSensorFeed() {
+        this.applyVirtualSensorReadings();
+    }
+
+    applyVirtualSensorReadings() {
+        const virtualDevices = virtualSensorData.getCurrentReadings();
+        const sensorDevices = Array.from(this.devices.values()).filter(device => device.type === 'sensor');
+
+        if (sensorDevices.length === 0) {
+            virtualDevices.forEach(device => {
+                this.devices.set(device.deviceId, device);
+            });
+        } else {
+            sensorDevices.forEach((device, index) => {
+                const virtualDevice = virtualDevices.find(item => item.zone === device.zone) || virtualDevices[index % virtualDevices.length];
+                if (!device.sensorData || device.sensorData.source === 'virtual') {
+                    device.sensorData = {
+                        ...virtualDevice.sensorData,
+                        source: 'virtual'
+                    };
+                    device.lastUpdate = Date.now();
+                }
+            });
+        }
+
+        this.updateDashboard();
+        this.notifyCallbacks();
+    }
+
+    getVirtualReadingForZone(zone) {
+        const virtualDevices = virtualSensorData.getCurrentReadings();
+        const reading = virtualDevices.find(device => device.zone === zone) || virtualDevices[0];
+        return reading.sensorData;
+    }
+
+    /**
      * Register a callback to be notified when sensor data updates
      */
     onUpdate(callback) {
@@ -235,9 +287,34 @@ class FirebaseDashboardManager {
 
         // Update stat cards (aggregate across all devices with sensor data)
         this.updateStatCards();
+        this.updateFarmStatusOverview();
 
         // Update zone cards (show all zones with devices)
         this.updateZoneCards(devicesByZone);
+    }
+
+    updateFarmStatusOverview() {
+        const summary = virtualSensorData.getFarmStatus();
+        const statusText = document.getElementById('farmStatusText');
+        const statusDetail = document.getElementById('farmStatusDetail');
+        const statusDot = document.getElementById('farmStatusDot');
+        const indicator = document.getElementById('farmStatusIndicator');
+
+        if (!statusText && !statusDetail && !statusDot) return;
+
+        const normalized = summary.status === 'healthy' ? 'healthy' : summary.status === 'risky' ? 'warning' : 'critical';
+        if (statusText) {
+            statusText.textContent = `${summary.text} - Score ${summary.score}`;
+        }
+        if (statusDetail) {
+            statusDetail.textContent = summary.description;
+        }
+        if (statusDot) {
+            statusDot.className = `status-dot ${normalized}`;
+        }
+        if (indicator) {
+            indicator.style.color = normalized === 'healthy' ? '#059669' : normalized === 'warning' ? '#92400e' : '#dc2626';
+        }
     }
 
     /**
@@ -325,12 +402,14 @@ class FirebaseDashboardManager {
 
             // Determine status based on moisture
             const moisture = sensorData?.moisture || 0;
-            let status = 'healthy';
-            let statusText = 'Healthy';
-            if (moisture < 30) {
+            let status = sensorData?.status === 'extreme' ? 'critical' : sensorData?.status || 'healthy';
+            let statusText = sensorData?.status ? sensorData.status.charAt(0).toUpperCase() + sensorData.status.slice(1) : 'Healthy';
+            if (status === 'risky') status = 'warning';
+            if (status === 'danger') status = 'critical';
+            if (!sensorData?.status && moisture < 30) {
                 status = 'critical';
                 statusText = 'Critical';
-            } else if (moisture < 50) {
+            } else if (!sensorData?.status && moisture < 50) {
                 status = 'warning';
                 statusText = 'Warning';
             }
@@ -503,4 +582,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export { FirebaseDashboardManager };
-
