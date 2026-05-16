@@ -59,7 +59,6 @@ class WeatherDashboard {
         return response.json();
     }
 
-<<<<<<< Updated upstream
     showLoadingState() {
         const existingError = document.querySelector('.weather-error');
         if (existingError) {
@@ -70,72 +69,6 @@ class WeatherDashboard {
             const element = document.getElementById(id);
             if (element) element.textContent = 'Loading...';
         });
-=======
-    async fetchJson(endpoint) {
-        const url = `${endpoint}?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}&appid=${this.apiKey}&units=metric`;
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-    }
-
-    showLoadingState() {
-        const existingError = document.querySelector('.weather-error');
-        if (existingError) {
-            existingError.remove();
-        }
-
-        ['currentTemp', 'windSpeed', 'humidity', 'visibility'].forEach((id) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = 'Loading...';
-        });
-    }
-
-    showErrorState(message) {
-        ['currentTemp', 'windSpeed', 'humidity', 'visibility'].forEach((id) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = 'Error';
-        });
-
-        const statsGrid = document.querySelector('.stats-grid');
-        if (statsGrid && !statsGrid.querySelector('.weather-error')) {
-            const error = document.createElement('p');
-            error.className = 'weather-error';
-            error.style.cssText = 'color:#e74c3c;font-weight:600;margin:0.75rem 0 0;';
-            error.textContent = `Could not load weather data: ${message}`;
-            statsGrid.appendChild(error);
-        }
-    }
-
-    async refreshWeatherData(silent = false) {
-        this.showLoadingState();
-
-        try {
-            const [currentWeather, forecast] = await Promise.all([
-                this.fetchJson(this.currentWeatherEndpoint),
-                this.fetchJson(this.forecastEndpoint)
-            ]);
-
-            this.currentWeather = currentWeather;
-            this.forecastList = forecast.list || [];
-            this.currentTimezoneOffset = currentWeather.timezone || 0;
-            this.ensureSelectedForecastDay();
-
-            this.updateCurrentWeather();
-            this.updateTemperatureChart();
-            this.updateWindChart();
-            this.updateHourlyForecast();
-            this.updateForecastDayControls();
-            this.updateWeatherAlerts(currentWeather.alerts || [], true);
-            this.updateMapPopup();
-            this.updateLastUpdated();
-        } catch (error) {
-            console.error('Failed to refresh weather data:', error);
-            if (silent && this.currentWeather) return;
-            this.showErrorState(error.message);
-        }
->>>>>>> Stashed changes
     }
 
     showErrorState(message) {
