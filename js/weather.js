@@ -1,6 +1,10 @@
-// Weather Page JavaScript - Live OpenWeather data with OpenWeather map tiles
+// Weather Page JavaScript - Handles weather dashboard functionality
 class WeatherDashboard {
     constructor() {
+<<<<<<< Updated upstream
+        this.weatherData = null;
+        this.charts = {};
+=======
         this.apiKey = 'c77f6cae2743fcd686c29b44e574e221';
         this.currentLocation = { lat: 13.7563, lon: 100.5018 };
         this.currentWeatherEndpoint = 'https://api.openweathermap.org/data/2.5/weather';
@@ -13,43 +17,63 @@ class WeatherDashboard {
         this.temperatureChart = null;
         this.windChart = null;
         this.refreshTimer = null;
+        this.selectedForecastDateKey = null;
 
+>>>>>>> Stashed changes
         this.init();
     }
 
-    async init() {
+    init() {
+        this.loadWeatherData();
         this.initializeCharts();
-        this.bindControls();
-        await this.initializeLocation();
-        await this.refreshWeatherData();
-        await this.initializeWeatherMap();
-
-        this.refreshTimer = window.setInterval(() => {
-            this.refreshWeatherData(true);
-        }, 10 * 60 * 1000);
+        this.setupEventListeners();
+        this.initializeWeatherMap();
     }
 
-    async initializeLocation() {
-        if (!navigator.geolocation) return;
-
-        try {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    enableHighAccuracy: true,
-                    timeout: 8000,
-                    maximumAge: 5 * 60 * 1000
-                });
-            });
-
-            this.currentLocation = {
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-            };
-        } catch (error) {
-            console.warn('Using fallback location for weather data:', error);
-        }
+    loadWeatherData() {
+        // Simulate weather data loading
+        this.weatherData = {
+            current: {
+                temperature: 28,
+                humidity: 75,
+                windSpeed: 12,
+                pressure: 1013,
+                condition: 'Partly Cloudy',
+                icon: 'partly-cloudy'
+            },
+            forecast: [
+                { day: 'Today', high: 30, low: 24, condition: 'Sunny', icon: 'sunny' },
+                { day: 'Tomorrow', high: 32, low: 26, condition: 'Hot', icon: 'hot' },
+                { day: 'Wednesday', high: 29, low: 23, condition: 'Rainy', icon: 'rainy' },
+                { day: 'Thursday', high: 27, low: 22, condition: 'Cloudy', icon: 'cloudy' },
+                { day: 'Friday', high: 31, low: 25, condition: 'Sunny', icon: 'sunny' }
+            ],
+            hourly: [
+                { time: '00:00', temp: 26, condition: 'Clear' },
+                { time: '03:00', temp: 25, condition: 'Clear' },
+                { time: '06:00', temp: 24, condition: 'Foggy' },
+                { time: '09:00', temp: 27, condition: 'Sunny' },
+                { time: '12:00', temp: 30, condition: 'Sunny' },
+                { time: '15:00', temp: 32, condition: 'Hot' },
+                { time: '18:00', temp: 29, condition: 'Partly Cloudy' },
+                { time: '21:00', temp: 27, condition: 'Clear' }
+            ]
+        };
+        
+        this.updateWeatherDisplay();
     }
 
+<<<<<<< Updated upstream
+    updateWeatherDisplay() {
+        // Update current weather
+        this.updateCurrentWeather();
+        
+        // Update forecast
+        this.updateForecast();
+        
+        // Update hourly forecast
+        this.updateHourlyForecast();
+=======
     async fetchJson(endpoint) {
         const url = `${endpoint}?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}&appid=${this.apiKey}&units=metric`;
         const response = await fetch(url);
@@ -99,12 +123,14 @@ class WeatherDashboard {
             this.currentWeather = currentWeather;
             this.forecastList = forecast.list || [];
             this.currentTimezoneOffset = currentWeather.timezone || 0;
+            this.ensureSelectedForecastDay();
 
             this.updateCurrentWeather();
             this.updateTemperatureChart();
             this.updateWindChart();
             this.updateHourlyForecast();
-            this.updateWeatherAlerts(currentWeather.alerts || []);
+            this.updateForecastDayControls();
+            this.updateWeatherAlerts(currentWeather.alerts || [], true);
             this.updateMapPopup();
             this.updateLastUpdated();
         } catch (error) {
@@ -112,55 +138,85 @@ class WeatherDashboard {
             if (silent && this.currentWeather) return;
             this.showErrorState(error.message);
         }
+>>>>>>> Stashed changes
     }
 
     updateCurrentWeather() {
-        if (!this.currentWeather) return;
-
-        const tempElement = document.getElementById('currentTemp');
-        if (tempElement) tempElement.textContent = `${Math.round(this.currentWeather.main.temp)}°C`;
-
-        const windElement = document.getElementById('windSpeed');
-        if (windElement) windElement.textContent = `${Math.round(this.currentWeather.wind.speed * 3.6)} km/h`;
-
-        const humidityElement = document.getElementById('humidity');
-        if (humidityElement) humidityElement.textContent = `${this.currentWeather.main.humidity}%`;
-
-        const visibilityElement = document.getElementById('visibility');
-        if (visibilityElement) visibilityElement.textContent = `${(this.currentWeather.visibility / 1000).toFixed(1)} km`;
-
-        this.updateWeatherDate();
+        const current = this.weatherData.current;
+        
+        // Update temperature
+        const tempElement = document.querySelector('.current-temp');
+        if (tempElement) {
+            tempElement.textContent = `${current.temperature}°C`;
+        }
+        
+        // Update condition
+        const conditionElement = document.querySelector('.current-condition');
+        if (conditionElement) {
+            conditionElement.textContent = current.condition;
+        }
+        
+        // Update other metrics
+        this.updateMetric('.humidity-value', `${current.humidity}%`);
+        this.updateMetric('.wind-value', `${current.windSpeed} km/h`);
+        this.updateMetric('.pressure-value', `${current.pressure} hPa`);
     }
 
-    updateWeatherDate() {
-        const dateElement = document.getElementById('weatherDate');
-        if (!dateElement) return;
+    updateForecast() {
+        const forecastContainer = document.querySelector('.forecast-container');
+        if (!forecastContainer) return;
 
-        const timestamp = this.currentWeather?.dt
-            ? (this.currentWeather.dt + this.currentTimezoneOffset) * 1000
-            : Date.now();
-        dateElement.textContent = new Intl.DateTimeFormat('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC'
-        }).format(new Date(timestamp));
+        forecastContainer.innerHTML = this.weatherData.forecast.map(day => `
+            <div class="forecast-item">
+                <div class="forecast-day">${day.day}</div>
+                <div class="forecast-icon">
+                    <i class="fas fa-${this.getWeatherIcon(day.icon)}"></i>
+                </div>
+                <div class="forecast-temps">
+                    <span class="forecast-high">${day.high}°</span>
+                    <span class="forecast-low">${day.low}°</span>
+                </div>
+                <div class="forecast-condition">${day.condition}</div>
+            </div>
+        `).join('');
     }
 
-    updateLastUpdated() {
-        const updatedElement = document.getElementById('lastUpdated');
-        if (!updatedElement) return;
+    updateHourlyForecast() {
+        const hourlyContainer = document.querySelector('.hourly-forecast');
+        if (!hourlyContainer) return;
 
-        updatedElement.textContent = `Last updated: ${new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        }).format(new Date())}`;
+        hourlyContainer.innerHTML = this.weatherData.hourly.map(hour => `
+            <div class="hourly-item">
+                <div class="hourly-time">${hour.time}</div>
+                <div class="hourly-temp">${hour.temp}°</div>
+                <div class="hourly-condition">${hour.condition}</div>
+            </div>
+        `).join('');
+    }
+
+    updateMetric(selector, value) {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.textContent = value;
+        }
+    }
+
+    getWeatherIcon(condition) {
+        const iconMap = {
+            'sunny': 'sun',
+            'hot': 'sun',
+            'cloudy': 'cloud',
+            'partly-cloudy': 'cloud-sun',
+            'rainy': 'cloud-rain',
+            'foggy': 'smog',
+            'clear': 'moon'
+        };
+        return iconMap[condition] || 'sun';
     }
 
     initializeCharts() {
         this.createTemperatureChart();
+        this.createHumidityChart();
         this.createWindChart();
     }
 
@@ -168,79 +224,139 @@ class WeatherDashboard {
         const ctx = document.getElementById('temperatureChart');
         if (!ctx) return;
 
-        this.temperatureChart = new Chart(ctx, {
+        this.charts.temperature = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: [],
+                labels: this.weatherData.hourly.map(h => h.time),
                 datasets: [{
                     label: 'Temperature (°C)',
-                    data: [],
+                    data: this.weatherData.hourly.map(h => h.temp),
                     borderColor: '#ff6b6b',
                     backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: false,
-                        title: { display: true, text: 'Temperature (°C)' }
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)'
+                        }
                     }
                 }
             }
         });
     }
 
-    updateTemperatureChart() {
-        if (!this.temperatureChart || !this.forecastList.length) return;
+    createHumidityChart() {
+        const ctx = document.getElementById('humidityChart');
+        if (!ctx) return;
 
-        const entries = this.forecastList.slice(0, 8);
+<<<<<<< Updated upstream
+        this.charts.humidity = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: this.weatherData.hourly.map(h => h.time),
+                datasets: [{
+                    label: 'Humidity (%)',
+                    data: this.weatherData.hourly.map(() => Math.floor(Math.random() * 20) + 70),
+                    backgroundColor: 'rgba(78, 205, 196, 0.8)',
+                    borderColor: '#4ecdc4',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Humidity (%)'
+                        }
+                    }
+                }
+            }
+        });
+=======
+        const entries = this.getSelectedDayEntries().slice(0, 8);
         this.temperatureChart.data.labels = entries.map((entry) => this.formatForecastLabel(entry.dt_txt, true));
         this.temperatureChart.data.datasets[0].data = entries.map((entry) => entry.main.temp);
         this.temperatureChart.update();
+>>>>>>> Stashed changes
     }
 
     createWindChart() {
         const ctx = document.getElementById('windChart');
         if (!ctx) return;
 
-        this.windChart = new Chart(ctx, {
+        this.charts.wind = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: [],
+                labels: this.weatherData.hourly.map(h => h.time),
                 datasets: [{
                     label: 'Wind Speed (km/h)',
-                    data: [],
+                    data: this.weatherData.hourly.map(() => Math.floor(Math.random() * 15) + 5),
                     borderColor: '#45b7d1',
                     backgroundColor: 'rgba(69, 183, 209, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: 'Wind Speed (km/h)' }
+                        title: {
+                            display: true,
+                            text: 'Wind Speed (km/h)'
+                        }
                     }
                 }
             }
         });
     }
 
+<<<<<<< Updated upstream
+    initializeWeatherMap() {
+        // Initialize weather map if element exists
+        const mapElement = document.getElementById('weatherMap');
+        if (mapElement && window.boot) {
+            // Initialize Windy map
+            window.boot('weatherMap', {
+                key: 'your-windy-api-key', // Replace with actual API key
+                lat: 13.7563,
+                lon: 100.5018,
+                zoom: 8
+=======
     updateWindChart() {
         if (!this.windChart || !this.forecastList.length) return;
 
-        const entries = this.forecastList.slice(0, 8);
+        const entries = this.getSelectedDayEntries().slice(0, 8);
         this.windChart.data.labels = entries.map((entry) => this.formatForecastLabel(entry.dt_txt, true));
         this.windChart.data.datasets[0].data = entries.map((entry) => parseFloat((entry.wind.speed * 3.6).toFixed(1)));
         this.windChart.update();
@@ -251,27 +367,45 @@ class WeatherDashboard {
         if (!tableBody) return;
 
         if (!this.forecastList.length) {
-            tableBody.innerHTML = '<tr><td colspan="5">No forecast data available.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6">No forecast data available.</td></tr>';
             return;
         }
 
-        tableBody.innerHTML = this.forecastList.slice(0, 8).map((entry) => `
+        const entries = this.getSelectedDayEntries();
+        if (!entries.length) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hourly forecast available for this day.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = entries.map((entry) => {
+            const condition = entry.weather?.[0] || {};
+            const icon = this.getWeatherIcon(condition.id, condition.icon);
+            const description = condition.description || 'Forecast';
+            return `
             <tr>
                 <td>${this.formatTime(entry.dt_txt)}</td>
+                <td>
+                    <span class="hourly-condition">
+                        <i class="${icon}"></i>
+                        <span>${description}</span>
+                    </span>
+                </td>
                 <td>${entry.main.temp.toFixed(1)}°C</td>
                 <td>${Math.round(entry.wind.speed * 3.6)} km/h ${this.degreesToCompass(entry.wind.deg)}</td>
                 <td>${entry.main.humidity}%</td>
                 <td>${Math.round((entry.pop || 0) * 100)}%</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     }
 
-    updateWeatherAlerts(alerts) {
+    updateWeatherAlerts(alerts, showTimestamp = false) {
         const tableBody = document.getElementById('weatherAlertsBody');
         if (!tableBody) return;
 
         if (!alerts || !alerts.length) {
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active weather alerts</td></tr>';
+            const checkedText = showTimestamp ? ` Checked ${this.formatCheckedTime(new Date())}.` : '';
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No active weather alerts.${checkedText}</td></tr>`;
             return;
         }
 
@@ -428,10 +562,28 @@ class WeatherDashboard {
         if (refreshButton) {
             refreshButton.addEventListener('click', () => {
                 this.refreshWeatherData();
+>>>>>>> Stashed changes
             });
         }
     }
 
+<<<<<<< Updated upstream
+    setupEventListeners() {
+        // Refresh weather data
+        const refreshBtn = document.querySelector('.refresh-weather');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.refreshWeatherData();
+            });
+        }
+
+        // Location search
+        const locationInput = document.querySelector('.location-input');
+        if (locationInput) {
+            locationInput.addEventListener('change', (e) => {
+                this.changeLocation(e.target.value);
+            });
+=======
     changeOverlay(overlay) {
         if (!this.map || !this.mapLayers[overlay]) return;
 
@@ -482,34 +634,171 @@ class WeatherDashboard {
             });
         }
 
-        const refreshForecastButton = document.getElementById('refreshForecast');
-        if (refreshForecastButton) {
-            refreshForecastButton.addEventListener('click', () => {
-                this.refreshWeatherData();
+        const refreshAlertsButton = document.getElementById('refreshAlerts');
+        if (refreshAlertsButton) {
+            refreshAlertsButton.addEventListener('click', async () => {
+                const previousText = refreshAlertsButton.textContent;
+                refreshAlertsButton.disabled = true;
+                refreshAlertsButton.textContent = 'Checking...';
+
+                try {
+                    await this.refreshWeatherData();
+                    this.updateWeatherAlerts(this.currentWeather?.alerts || [], true);
+                } finally {
+                    refreshAlertsButton.disabled = false;
+                    refreshAlertsButton.textContent = previousText;
+                }
             });
         }
 
-        const refreshAlertsButton = document.getElementById('refreshAlerts');
-        if (refreshAlertsButton) {
-            refreshAlertsButton.addEventListener('click', () => {
-                this.updateWeatherAlerts([]);
-            });
+        const prevDayButton = document.getElementById('forecastPrevDay');
+        const nextDayButton = document.getElementById('forecastNextDay');
+        const todayButton = document.getElementById('forecastToday');
+        const dayLabelButton = document.getElementById('forecastDayLabel');
+
+        if (prevDayButton) {
+            prevDayButton.addEventListener('click', () => this.changeForecastDay(-1));
+        }
+
+        if (nextDayButton) {
+            nextDayButton.addEventListener('click', () => this.changeForecastDay(1));
+        }
+
+        if (todayButton) {
+            todayButton.addEventListener('click', () => this.selectTodayForecast());
+        }
+
+        if (dayLabelButton) {
+            dayLabelButton.addEventListener('click', () => this.changeForecastDay(1));
+>>>>>>> Stashed changes
         }
     }
 
-    updateForecastChart(period) {
-        if (!this.temperatureChart || !this.forecastList.length) return;
+    refreshWeatherData() {
+        console.log('Refreshing weather data...');
+        this.loadWeatherData();
+    }
 
-        let entries = this.forecastList.slice(0, 8);
-        if (period === 'Next 7 days') {
-            entries = this.forecastList.filter((_, index) => index % 8 === 0).slice(0, 7);
-        } else if (period === 'Next 14 days') {
-            entries = this.forecastList.filter((_, index) => index % 8 === 0).slice(0, 14);
+<<<<<<< Updated upstream
+    changeLocation(location) {
+        console.log('Changing location to:', location);
+        // Implement location change logic
+        this.refreshWeatherData();
+=======
+    getDateKey(dtTxt) {
+        return dtTxt ? dtTxt.split(' ')[0] : '';
+    }
+
+    getAvailableForecastDateKeys() {
+        return Array.from(new Set(this.forecastList.map((entry) => this.getDateKey(entry.dt_txt)).filter(Boolean)));
+    }
+
+    getTodayKey() {
+        if (!this.currentWeather?.dt) {
+            return this.getDateKey(this.forecastList[0]?.dt_txt);
         }
 
-        this.temperatureChart.data.labels = entries.map((entry) => this.formatForecastLabel(entry.dt_txt, period !== 'Next 24 hours'));
-        this.temperatureChart.data.datasets[0].data = entries.map((entry) => entry.main.temp);
-        this.temperatureChart.update();
+        const timestamp = (this.currentWeather.dt + this.currentTimezoneOffset) * 1000;
+        const date = new Date(timestamp);
+        return [
+            date.getUTCFullYear(),
+            String(date.getUTCMonth() + 1).padStart(2, '0'),
+            String(date.getUTCDate()).padStart(2, '0')
+        ].join('-');
+    }
+
+    ensureSelectedForecastDay() {
+        const availableDates = this.getAvailableForecastDateKeys();
+        if (!availableDates.length) return;
+
+        const todayKey = this.getTodayKey();
+        if (!this.selectedForecastDateKey || !availableDates.includes(this.selectedForecastDateKey)) {
+            this.selectedForecastDateKey = availableDates.includes(todayKey) ? todayKey : availableDates[0];
+        }
+    }
+
+    getSelectedDayEntries() {
+        this.ensureSelectedForecastDay();
+        return this.forecastList.filter((entry) => this.getDateKey(entry.dt_txt) === this.selectedForecastDateKey);
+    }
+
+    changeForecastDay(direction) {
+        const availableDates = this.getAvailableForecastDateKeys();
+        if (!availableDates.length) return;
+
+        this.ensureSelectedForecastDay();
+        const currentIndex = availableDates.indexOf(this.selectedForecastDateKey);
+        const nextIndex = Math.min(availableDates.length - 1, Math.max(0, currentIndex + direction));
+        this.selectedForecastDateKey = availableDates[nextIndex];
+        this.updateSelectedForecastDay();
+    }
+
+    selectTodayForecast() {
+        const availableDates = this.getAvailableForecastDateKeys();
+        const todayKey = this.getTodayKey();
+        this.selectedForecastDateKey = availableDates.includes(todayKey) ? todayKey : availableDates[0];
+        this.updateSelectedForecastDay();
+    }
+
+    updateSelectedForecastDay() {
+        this.updateTemperatureChart();
+        this.updateWindChart();
+        this.updateHourlyForecast();
+        this.updateForecastDayControls();
+    }
+
+    updateForecastDayControls() {
+        const availableDates = this.getAvailableForecastDateKeys();
+        const label = document.getElementById('forecastDayLabel');
+        const prevButton = document.getElementById('forecastPrevDay');
+        const nextButton = document.getElementById('forecastNextDay');
+        const todayButton = document.getElementById('forecastToday');
+
+        if (!availableDates.length) {
+            if (label) label.textContent = '--';
+            return;
+        }
+
+        this.ensureSelectedForecastDay();
+        const currentIndex = availableDates.indexOf(this.selectedForecastDateKey);
+        const todayKey = this.getTodayKey();
+        const dateLabel = this.formatDateLabel(this.selectedForecastDateKey);
+
+        if (label) {
+            label.textContent = this.selectedForecastDateKey === todayKey ? 'Today' : dateLabel;
+            label.title = 'Click to go to next forecast day';
+        }
+        if (prevButton) prevButton.disabled = currentIndex <= 0;
+        if (nextButton) nextButton.disabled = currentIndex >= availableDates.length - 1;
+        if (todayButton) todayButton.disabled = this.selectedForecastDateKey === todayKey;
+    }
+
+    formatDateLabel(dateKey) {
+        if (!dateKey) return '--';
+        const [year, month, day] = dateKey.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric'
+        }).format(date);
+    }
+
+    formatCheckedTime(date) {
+        return new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        }).format(date);
+    }
+
+    getWeatherIcon(conditionId, iconCode) {
+        if (conditionId >= 200 && conditionId < 300) return 'fas fa-cloud-bolt';
+        if (conditionId >= 300 && conditionId < 600) return 'fas fa-cloud-rain';
+        if (conditionId >= 600 && conditionId < 700) return 'fas fa-snowflake';
+        if (conditionId >= 700 && conditionId < 800) return 'fas fa-smog';
+        if (conditionId === 800) return iconCode && iconCode.includes('n') ? 'fas fa-moon' : 'fas fa-sun';
+        if (conditionId === 801) return iconCode && iconCode.includes('n') ? 'fas fa-cloud-moon' : 'fas fa-cloud-sun';
+        if (conditionId > 801) return 'fas fa-cloud';
+        return 'fas fa-cloud-sun';
     }
 
     formatTime(dtTxt) {
@@ -542,9 +831,11 @@ class WeatherDashboard {
         const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
         const index = Math.round(((deg % 360) / 45)) % 8;
         return directions[index];
+>>>>>>> Stashed changes
     }
 }
 
+// Initialize weather dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.weatherDashboard = new WeatherDashboard();
+    new WeatherDashboard();
 });

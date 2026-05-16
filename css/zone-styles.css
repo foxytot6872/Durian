@@ -1,5 +1,505 @@
 /* Zone Navigation and Camera Feed Styles */
 
+.hidden {
+    display: none !important;
+}
+
+.farm-manager-home,
+.farm-zone-detail {
+    width: 100%;
+}
+
+.farm-manager-hero,
+.farm-management-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.farm-manager-hero {
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.farm-manager-eyebrow {
+    color: #4ba252;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    margin: 0 0 0.5rem;
+}
+
+.farm-manager-hero h2 {
+    color: #1e293b;
+    font-size: 1.75rem;
+    line-height: 1.25;
+    margin: 0 0 0.5rem;
+}
+
+.farm-manager-hero p,
+.farm-management-header p,
+.farm-zone-tile small {
+    color: #64748b;
+}
+
+.farm-zone-picker {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.farm-zone-tile {
+    text-align: left;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #4ba252;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.farm-zone-tile:hover {
+    transform: translateY(-2px);
+    border-color: #4ba252;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
+.farm-zone-tile span,
+.farm-zone-tile strong,
+.farm-zone-tile small {
+    display: block;
+}
+
+.farm-zone-tile span {
+    color: #4ba252;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+}
+
+.farm-zone-tile strong {
+    color: #1e293b;
+    font-size: 1.15rem;
+    margin-bottom: 0.25rem;
+}
+
+.zone-switcher-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.75rem 0 1.25rem;
+}
+
+.zone-switcher-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.zone-switcher-buttons button,
+.farm-log-actions button {
+    border: 1px solid #dbe3ec;
+    background: #f8fafc;
+    color: #475569;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.zone-switcher-buttons button {
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0.65rem 0.85rem;
+}
+
+.zone-switcher-buttons button:hover,
+.zone-switcher-buttons button.active {
+    background: #4ba252;
+    border-color: #4ba252;
+    color: white;
+}
+
+.farm-management-section {
+    margin-bottom: 2rem;
+}
+
+.farm-management-card {
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.farm-management-card .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: #4ba252;
+    color: white;
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.farm-management-card .btn-primary:hover {
+    background: #3d8743;
+}
+
+.farm-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.farm-management-header h4 {
+    color: #1e293b;
+    font-size: 1.15rem;
+    margin: 0 0 0.25rem;
+}
+
+.farm-management-header p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.farm-management-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.irrigation-control-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.farm-wide-schedule {
+    margin-bottom: 1.25rem;
+}
+
+.farm-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.farm-info-item {
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+}
+
+.farm-info-item span,
+.farm-info-item strong {
+    display: block;
+}
+
+.farm-info-item span {
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.farm-info-item strong {
+    color: #1e293b;
+    font-size: 1.2rem;
+}
+
+.tree-age-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+}
+
+.tree-age-display span {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+.tree-age-display button {
+    border: 1px solid #dbe3ec;
+    background: white;
+    color: #166534;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+}
+
+.farm-info-card {
+    padding: 1.75rem;
+}
+
+.tree-age-control {
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) auto;
+    gap: 1rem;
+    align-items: end;
+    margin-top: 1rem;
+}
+
+.tree-age-control label {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.tree-age-control input {
+    width: 100%;
+    margin-top: 0.35rem;
+    padding: 0.7rem 0.75rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 0.5rem;
+    background: white;
+    color: #1e293b;
+}
+
+.virtual-valve-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.virtual-valve-summary span,
+.virtual-valve-summary strong {
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.farm-log-actions button {
+    padding: 0.55rem 0.75rem;
+}
+
+.watering-schedule-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.irrigation-control-grid .watering-schedule-form {
+    grid-template-columns: 1fr;
+}
+
+.farm-wide-schedule .watering-schedule-form {
+    grid-template-columns: 1fr 1.2fr 1fr auto;
+    align-items: end;
+}
+
+.watering-schedule-form label {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.watering-schedule-form input,
+.watering-schedule-form select {
+    width: 100%;
+    margin-top: 0.35rem;
+    padding: 0.7rem 0.75rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 0.5rem;
+    background: white;
+    color: #1e293b;
+}
+
+.watering-schedule-form select {
+    appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 13px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 2.25rem;
+}
+
+.schedule-inline-input {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.schedule-inline-input span {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 0.35rem;
+}
+
+.schedule-water-amount {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #f1f5f9;
+    border-radius: 0.5rem;
+}
+
+.schedule-water-amount span {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.schedule-water-amount strong {
+    color: #166534;
+    font-size: 1rem;
+}
+
+.valve-control-card-simple {
+    margin-bottom: 2rem;
+}
+
+.manual-valve-controls {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) auto 1fr;
+    gap: 1rem;
+    align-items: end;
+}
+
+.manual-valve-controls label {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.manual-valve-controls select {
+    width: 100%;
+    margin-top: 0.35rem;
+    padding: 0.7rem 2.25rem 0.7rem 0.75rem;
+    border: 1px solid #dbe3ec;
+    border-radius: 0.5rem;
+    background-color: white;
+    color: #1e293b;
+    appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 13px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+.manual-water-status {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.5rem;
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+}
+
+.watering-schedule-form button {
+    align-self: end;
+}
+
+.farm-log-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.farm-log-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    background: #f8fafc;
+}
+
+.farm-log-item strong,
+.farm-log-item span,
+.farm-log-item small {
+    display: block;
+}
+
+.farm-log-item strong {
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.farm-log-item span {
+    color: #475569;
+    font-size: 0.85rem;
+}
+
+.farm-log-item small {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
+.farm-log-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.farm-log-toolbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.farm-log-toolbar button {
+    border: 1px solid #fecaca;
+    background: #fff7f7;
+    color: #b91c1c;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 0.55rem 0.75rem;
+}
+
+.farm-log-actions button:hover,
+.farm-log-toolbar button:hover {
+    border-color: #4ba252;
+    color: #166534;
+}
+
+.empty-log {
+    color: #64748b;
+    margin: 0;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.65rem;
+}
+
 /* Clickable Zone Styles */
 .clickable-zone {
     cursor: pointer;
@@ -597,6 +1097,18 @@
 
 /* Responsive design for zones and camera */
 @media (max-width: 1024px) {
+    .farm-zone-picker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .farm-wide-schedule .watering-schedule-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .irrigation-control-grid {
+        grid-template-columns: 1fr;
+    }
+
     .zone-details {
         padding: 1.5rem;
     }
@@ -611,9 +1123,61 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 1rem;
     }
+
+    .manual-valve-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .farm-info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tree-age-control {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 768px) {
+    .farm-manager-hero,
+    .farm-management-card {
+        padding: 1rem;
+    }
+
+    .farm-zone-picker,
+    .farm-management-grid,
+    .irrigation-control-grid,
+    .watering-schedule-form,
+    .farm-wide-schedule .watering-schedule-form {
+        grid-template-columns: 1fr;
+    }
+
+    .farm-management-header,
+    .farm-log-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .zone-switcher-buttons,
+    .farm-log-actions {
+        width: 100%;
+    }
+
+    .farm-log-actions button {
+        flex: 1;
+    }
+
+    .manual-valve-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .farm-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tree-age-control {
+        grid-template-columns: 1fr;
+    }
+
     .zone-details {
         padding: 1.25rem;
     }

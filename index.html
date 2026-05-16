@@ -47,7 +47,7 @@
                 <li class="nav-item">
                     <a href="Map.html" class="nav-link">
                         <i class="fas fa-map"></i>
-                        <span>Map</span>
+                        <span>Farm Manager</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -76,10 +76,6 @@
                     <h1>Dashboard</h1>
                 </div>
                 <div class="header-right">
-                    <div class="notifications">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
-                    </div>
                     <div class="user-profile">
                         <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
                         <span>John Durian</span>
@@ -94,12 +90,7 @@
                 <div class="farm-overview">
                     <div class="overview-header">
                         <h2>Farm Status Overview</h2>
-                        <div class="status-indicator" id="farmStatusIndicator">
-                            <span class="status-dot healthy" id="farmStatusDot"></span>
-                            <span id="farmStatusText">All Systems Operational</span>
-                        </div>
                     </div>
-                    <p id="farmStatusDetail">Live and virtual sensor readings are being evaluated.</p>
                 </div>
 
                 <!-- Stats Cards -->
@@ -177,7 +168,7 @@
                     <div class="table-card">
                         <div class="table-header">
                             <h3>Recent Activities</h3>
-                            <button class="btn-secondary">View All</button>
+                            <button class="btn-secondary" onclick="window.location.href='Map.html'">View All</button>
                         </div>
                         <div class="table-container">
                             <table class="data-table">
@@ -268,8 +259,8 @@
                     localStorage.setItem('selectedZone', zone);
                     localStorage.setItem('selectedZoneName', zoneName);
                     
-                    // Navigate to Map page
-                    window.location.href = 'Map.html';
+                    // Navigate to this zone in Farm Manager
+                    window.location.href = `Map.html#zone-${zone}`;
                 });
             });
         });
