@@ -125,3 +125,8 @@
     --chat--footer--background: var(--chat--color-light);
     --chat--footer--color: var(--chat--color-primary);
 }
+
+.n8n-chat .chat-powered-by,
+.n8n-chat .chat-get-started-footer {
+    display: none !important;
+}

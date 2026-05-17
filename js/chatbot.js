@@ -383,7 +383,7 @@ function initChatbot() {
             loadPreviousSession: true,
             metadata: buildPromptFarmContext(metadata),
 
-            showWelcomeScreen: true,
+            showWelcomeScreen: false,
 
             initialMessages: [
                 'Hi! I’m Durian Expert Bot 🌱',
