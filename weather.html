@@ -42,7 +42,7 @@
                 <li class="nav-item">
                     <a href="Map.html" class="nav-link">
                         <i class="fas fa-map"></i>
-                        <span>Map</span>
+                        <span>Farm Manager</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -71,10 +71,6 @@
                     <h1>Weather Overview</h1>
                 </div>
                 <div class="header-right">
-                    <div class="notifications">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
-                    </div>
                   <div class="user-profile">
                         <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
                         <span>John Durian</span>
@@ -85,6 +81,9 @@
 
             <!-- Weather Dashboard Content -->
             <div class="dashboard-content">
+                   <p id="weatherDate" class="weather-date">Monday, June 5</p>
+                <p id="lastUpdated" class="weather-updated">Last updated: --</p>
+
                 <!-- Weather Stats Cards -->
                 <div class="stats-grid">
                     <div class="stat-card weather-card">
@@ -129,7 +128,6 @@
                     </div>
                 </div>
                 <p id="weatherDate" class="weather-date">Monday, June 5</p>
-                <p id="lastUpdated" class="weather-updated">Last updated: --</p>
 
                 <!-- Weather Map Section -->
                 <div class="weather-map-section">
@@ -164,80 +162,6 @@
                         </div>
                         <div class="map-container">
                             <div id="windyMap" class="windy-map"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weather Charts Section -->
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Temperature Forecast</h3>
-                            <div class="chart-controls">
-                                <select id="forecastPeriod">
-                                    <option>Next 24 hours</option>
-                                    <option>Next 7 days</option>
-                                    <option>Next 14 days</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="temperatureChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Wind Speed & Direction</h3>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="windChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weather Data Tables -->
-                <div class="tables-grid">
-                    <div class="table-card">
-                        <div class="table-header">
-                            <h3>Hourly Forecast</h3>
-                            <button class="btn-secondary" id="refreshForecast">Refresh</button>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Temperature</th>
-                                        <th>Wind</th>
-                                        <th>Humidity</th>
-                                        <th>Precipitation</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="hourlyForecastBody">
-                                    <!-- Hourly forecast will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="table-card">
-                        <div class="table-header">
-                            <h3>Weather Alerts</h3>
-                            <button class="btn-secondary" id="refreshAlerts">Refresh</button>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Severity</th>
-                                        <th>Description</th>
-                                        <th>Valid Until</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="weatherAlertsBody">
-                                    <!-- Weather alerts will be populated by JavaScript -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 // Farm Dashboard JavaScript - Handles all farm monitoring functionality
 class FarmDashboard {
     constructor() {
+        this.wateringLogsKey = 'durianZoneWateringLogsV3';
         this.init();
     }
 
@@ -12,7 +13,8 @@ class FarmDashboard {
     }
 
     populateAlerts() {
-        const alertsData = [
+        const virtualAlerts = window.VirtualSensorData ? window.VirtualSensorData.getAlerts() : [];
+        const alertsData = virtualAlerts.length ? virtualAlerts : [
             {
                 type: 'Soil Moisture',
                 description: 'Zone C soil moisture below optimal level',
@@ -58,49 +60,104 @@ class FarmDashboard {
     }
 
     populateActivities() {
-        const activitiesData = [
-            {
-                activity: 'Watering',
-                location: 'Zone A',
-                duration: '2 hours',
-                status: 'Completed',
-                time: '1 hour ago'
-            },
-            {
-                activity: 'Fertilizing',
-                location: 'Zone B',
-                duration: '1.5 hours',
-                status: 'In Progress',
-                time: '30 min ago'
-            },
-            {
-                activity: 'Pruning',
-                location: 'Zone D',
-                duration: '3 hours',
-                status: 'Completed',
-                time: '3 hours ago'
-            },
-            {
-                activity: 'Soil Testing',
-                location: 'Zone C',
-                duration: '1 hour',
-                status: 'Scheduled',
-                time: 'Tomorrow'
-            }
-        ];
-
         const tbody = document.getElementById('activitiesTableBody');
-        if (tbody) {
-            tbody.innerHTML = activitiesData.map(activity => `
-                <tr>
-                    <td>${activity.activity}</td>
-                    <td>${activity.location}</td>
-                    <td>${activity.duration}</td>
-                    <td><span class="status-badge ${activity.status.toLowerCase().replace(' ', '-')}">${activity.status}</span></td>
-                    <td>${activity.time}</td>
-            </tr>
-        `).join('');
+        if (!tbody) return;
+
+        const logs = this.getLocalWateringLogs();
+        this.renderWateringActivities(logs);
+        this.loadFirebaseWateringLogs();
+    }
+
+    getLocalWateringLogs() {
+        try {
+            return JSON.parse(localStorage.getItem(this.wateringLogsKey) || '[]');
+        } catch (error) {
+            console.warn('Could not read watering logs', error);
+            return [];
         }
+    }
+
+    renderWateringActivities(logs) {
+        const tbody = document.getElementById('activitiesTableBody');
+        if (!tbody) return;
+
+        const sortedLogs = [...logs]
+            .filter(log => log && log.zone)
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .slice(0, 7);
+
+        if (!sortedLogs.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 1.5rem; color: #718096;">
+                        No watering logs yet
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = sortedLogs.map(log => {
+            const duration = Number(log.duration || 0);
+            const waterAmount = log.waterAmountLiters ? `, ${log.waterAmountLiters} L` : '';
+            const status = log.status === 'watering' ? 'Watering' : 'Completed';
+            const statusClass = log.status === 'watering' ? 'in-progress' : 'completed';
+            return `
+                <tr>
+                    <td>Watering</td>
+                    <td>Zone ${log.zone}</td>
+                    <td>${duration} min${waterAmount}</td>
+                    <td><span class="status-badge ${statusClass}">${status}</span></td>
+                    <td>${this.formatRelativeTime(log.createdAt)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async loadFirebaseWateringLogs(retry = 0) {
+        const dashboard = window.firebaseDashboard;
+        if (!dashboard?.currentUser || !dashboard?.idToken) {
+            if (retry < 20) {
+                setTimeout(() => this.loadFirebaseWateringLogs(retry + 1), 500);
+            }
+            return;
+        }
+
+        try {
+            const dbUrl = 'https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app';
+            const response = await fetch(`${dbUrl}/users/${dashboard.currentUser.uid}/watering_logs.json?auth=${dashboard.idToken}`);
+            const firebaseLogs = await response.json();
+            const merged = this.mergeLogsById(this.getLocalWateringLogs(), Object.values(firebaseLogs || {}));
+            localStorage.setItem(this.wateringLogsKey, JSON.stringify(merged.slice(0, 80)));
+            this.renderWateringActivities(merged);
+        } catch (error) {
+            console.warn('Could not load watering logs from Firebase', error);
+        }
+    }
+
+    mergeLogsById(localLogs, firebaseLogs) {
+        const logsById = new Map();
+        [...localLogs, ...firebaseLogs].forEach(log => {
+            if (log?.id) logsById.set(log.id, log);
+        });
+        return [...logsById.values()].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
+    formatRelativeTime(value) {
+        if (!value) return 'No time';
+
+        const diffMs = Date.now() - new Date(value).getTime();
+        if (!Number.isFinite(diffMs)) return 'No time';
+
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes} min ago`;
+
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+        const days = Math.floor(hours / 24);
+        return `${days} day${days === 1 ? '' : 's'} ago`;
     }
 
     initFarmCharts() {
@@ -204,12 +261,15 @@ class FarmDashboard {
         // Check if Firebase Dashboard Manager is available
         if (window.firebaseDashboard) {
             console.log('✅ Firebase Dashboard Manager connected');
+            window.firebaseDashboard.onUpdate(() => this.populateAlerts());
         } else {
             console.log('⏳ Waiting for Firebase Dashboard Manager...');
             // Retry after a delay
             setTimeout(() => {
                 if (window.firebaseDashboard) {
                     console.log('✅ Firebase Dashboard Manager now available');
+                    window.firebaseDashboard.onUpdate(() => this.populateAlerts());
+                    this.populateAlerts();
                 }
             }, 2000);
         }

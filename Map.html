@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Farm Map - Durian Dashboard</title>
+    <title>Farm Manager - Durian Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/zone-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -85,7 +85,7 @@
                 <li class="nav-item active">
                     <a href="map.html" class="nav-link">
                         <i class="fas fa-map"></i>
-                        <span>Map</span>
+                        <span>Farm Manager</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -111,13 +111,10 @@
                     <button class="menu-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Farm Map</h1>
+                    <h1>Farm Manager</h1>
                 </div>
                 <div class="header-right">
-                    <div class="notifications">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">0</span>
-                     <div class="user-profile">
+                    <div class="user-profile">
                         <img src="assets\ทุเรียน1-1024x1024.png" alt="User">
                         <span>John Durian</span>
                         <i class="fas fa-chevron-down"></i>
@@ -127,6 +124,113 @@
 
             <!-- Dashboard Content -->
             <div class="dashboard-content">
+                <!-- Farm Manager Landing -->
+                <section class="farm-manager-home" id="farmManagerHome">
+                    <div class="farm-manager-hero">
+                        <div>
+                            <p class="farm-manager-eyebrow">Farm Manager</p>
+                            <h2>Choose a zone to manage</h2>
+                            <p>Check the zone camera, review the soil sensor, open the valve, and schedule watering from one place.</p>
+                        </div>
+                    </div>
+
+                    <div class="farm-zone-picker" id="farmZonePicker">
+                        <button class="farm-zone-tile" type="button" data-zone-select="A">
+                            <span>Zone A</span>
+                            <strong>North Field</strong>
+                            <small>Camera, sensor, valve</small>
+                        </button>
+                        <button class="farm-zone-tile" type="button" data-zone-select="B">
+                            <span>Zone B</span>
+                            <strong>South Field</strong>
+                            <small>Camera, sensor, valve</small>
+                        </button>
+                        <button class="farm-zone-tile" type="button" data-zone-select="C">
+                            <span>Zone C</span>
+                            <strong>East Field</strong>
+                            <small>Camera, sensor, valve</small>
+                        </button>
+                        <button class="farm-zone-tile" type="button" data-zone-select="D">
+                            <span>Zone D</span>
+                            <strong>West Field</strong>
+                            <small>Camera, sensor, valve</small>
+                        </button>
+                    </div>
+
+                    <div class="farm-management-card farm-wide-schedule">
+                        <div class="farm-management-header">
+                            <div>
+                                <h4>Farm Watering Schedule</h4>
+                                <p>Create schedules for any zone. Schedules are synced to Firebase when signed in.</p>
+                            </div>
+                        </div>
+                        <form class="watering-schedule-form" id="farmScheduleForm">
+                            <label>
+                                Zone
+                                <select id="farmScheduleZone">
+                                    <option value="A">Zone A</option>
+                                    <option value="B">Zone B</option>
+                                    <option value="C">Zone C</option>
+                                    <option value="D">Zone D</option>
+                                </select>
+                            </label>
+                            <label>
+                                Date and time
+                                <input type="datetime-local" id="farmScheduleDateTime" required>
+                            </label>
+                            <label>
+                                Duration
+                                <select id="farmScheduleDuration">
+                                    <option value="15">15 minutes</option>
+                                    <option value="30" selected>30 minutes</option>
+                                    <option value="45">45 minutes</option>
+                                    <option value="60">1 hour</option>
+                                    <option value="90">1.5 hours</option>
+                                </select>
+                            </label>
+                            <button class="btn-primary" type="submit">
+                                <i class="fas fa-calendar-plus"></i>
+                                Add Farm Schedule
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="farm-management-grid">
+                        <div class="farm-management-card">
+                            <div class="farm-management-header">
+                                <div>
+                                    <h4>Upcoming Schedules</h4>
+                                    <p>All zone watering jobs.</p>
+                                </div>
+                            </div>
+                            <div id="farmScheduleList" class="farm-log-list"></div>
+                        </div>
+                        <div class="farm-management-card">
+                            <div class="farm-management-header">
+                                <div>
+                                    <h4>Recent Watering Logs</h4>
+                                    <p>Manual and scheduled irrigation actions.</p>
+                                </div>
+                            </div>
+                            <div id="farmWateringLogList" class="farm-log-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="farm-zone-detail hidden" id="farmZoneDetail">
+                <div class="zone-switcher-bar">
+                    <div class="zone-switcher-buttons">
+                        <button type="button" data-zone-switch="A">A</button>
+                        <button type="button" data-zone-switch="B">B</button>
+                        <button type="button" data-zone-switch="C">C</button>
+                        <button type="button" data-zone-switch="D">D</button>
+                        <button class="btn-secondary" id="farmManagerHomeBtn" type="button">
+                            <i class="fas fa-table-cells-large"></i>
+                            All Zones
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Zone Camera Feed -->
                 <div class="camera-section">
                     <div class="camera-header">
@@ -145,10 +249,6 @@
                             <button class="btn-secondary" id="recordBtn">
                                 <i class="fas fa-video"></i>
                                 Record
-                            </button>
-                            <button class="btn-secondary" id="backBtn">
-                                <i class="fas fa-arrow-left"></i>
-                                Back to Dashboard
                             </button>
                         </div>
                     </div>
@@ -184,6 +284,34 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Valve Control -->
+                <div class="farm-management-section">
+                    <div class="farm-management-card valve-control-card-simple">
+                        <div class="farm-management-header">
+                            <div>
+                                <h4>Valve Control</h4>
+                                <p>Water this zone manually for a set duration.</p>
+                            </div>
+                        </div>
+                        <div class="manual-valve-controls">
+                            <label>
+                                Duration
+                                <select id="manualWaterDuration">
+                                    <option value="15">15 minutes</option>
+                                    <option value="30" selected>30 minutes</option>
+                                    <option value="45">45 minutes</option>
+                                    <option value="60">1 hour</option>
+                                </select>
+                            </label>
+                            <button class="btn-primary" type="button" id="manualWaterNowBtn">
+                                <i class="fas fa-droplet"></i>
+                                Water Now
+                            </button>
+                            <div class="manual-water-status" id="manualWaterStatus">Water for 30 min</div>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Zone Information -->
                 <div class="zone-info-section">
@@ -202,41 +330,66 @@
                     </div>
                 </div>
 
-                <!-- Valve Control System -->
-                <div class="valve-control-section">
-                    <div class="valve-control-header">
-                        <h3>Valve Control System</h3>
-                        <div class="valve-status-indicator">
-                            <span class="status-dot" id="valveStatusDot"></span>
-                            <span id="valveStatusText">System Ready</span>
+                <!-- Irrigation Manager -->
+                <div class="farm-management-section">
+                    <div class="irrigation-control-grid">
+                        <div class="farm-management-card">
+                        <div class="farm-management-header">
+                            <div>
+                                <h4>Scheduling</h4>
+                                <p>Repeat watering for this zone by day, time, and duration.</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="valve-controls-grid">
-                        <div class="valve-control-card">
-                            <div class="valve-header">
-                                <h4>Watering System</h4>
-                                <div class="valve-toggle" id="wateringToggle">
-                                    <input type="checkbox" id="wateringValve" class="valve-switch">
-                                    <label for="wateringValve" class="valve-label">
-                                        <span class="valve-slider"></span>
-                                    </label>
+                            <form class="watering-schedule-form" id="wateringScheduleForm">
+                                <label>
+                                    Repeat every
+                                    <div class="schedule-inline-input">
+                                        <input type="number" id="scheduleRepeatDays" min="1" max="30" value="1" required>
+                                        <span>day(s)</span>
+                                    </div>
+                                </label>
+                                <label>
+                                    At
+                                    <input type="time" id="scheduleTime" required>
+                                </label>
+                                <label>
+                                    For
+                                    <select id="scheduleDuration">
+                                        <option value="15">15 minutes</option>
+                                        <option value="30" selected>30 minutes</option>
+                                        <option value="45">45 minutes</option>
+                                        <option value="60">1 hour</option>
+                                    </select>
+                                </label>
+                                <div class="schedule-water-amount">
+                                    <span>Estimated water</span>
+                                    <strong id="scheduleWaterAmount">360 L</strong>
+                                </div>
+                                <button class="btn-primary" type="submit">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    Add Schedule
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="farm-management-card">
+                            <div class="farm-management-header">
+                                <div>
+                                    <h4>Upcoming Schedule</h4>
+                                    <p>Next 7 watering jobs for this zone.</p>
                                 </div>
                             </div>
-                            <div class="valve-metrics">
-                                <div class="valve-metric">
-                                    <span class="metric-label">Water Pressure</span>
-                                    <span class="metric-value" id="waterPressure">2.5 bar</span>
-                                </div>
-                                <div class="valve-metric">
-                                    <span class="metric-label">Flow Rate</span>
-                                    <span class="metric-value" id="flowRate">15 L/min</span>
-                                </div>
-                                <div class="valve-metric">
-                                    <span class="metric-label">Duration</span>
-                                    <span class="metric-value" id="wateringDuration">30 min</span>
+                            <div id="wateringScheduleList" class="farm-log-list"></div>
+                        </div>
+
+                        <div class="farm-management-card">
+                            <div class="farm-management-header">
+                                <div>
+                                    <h4>Watering Log</h4>
+                                    <p>Manual valve actions and scheduled watering history for this zone. Clear it anytime after testing.</p>
                                 </div>
                             </div>
+                            <div id="wateringLogList" class="farm-log-list"></div>
                         </div>
                     </div>
                 </div>
@@ -245,11 +398,7 @@
                 <div class="zone-status-dashboard">
                     <div class="status-header">
                         <h3>Zone Status Dashboard</h3>
-                        <div class="status-filters">
-                            <button class="filter-btn active" data-filter="all">All</button>
-                        </div>
                     </div>
-                    
                     <div class="status-cards-grid" id="statusCardsGrid">
                         <!-- Loading state -->
                         <div class="loading-state" id="statusCardsLoading">
@@ -259,59 +408,42 @@
                     </div>
                 </div>
 
-                <div class="tables-grid">
-                    <div class="table-card">
-                        <div class="table-header">
-                            <h3>Field Status</h3>
-                            <button class="btn-secondary">View Details</button>
+                <!-- Farm Information -->
+                <div class="farm-management-section">
+                    <div class="farm-management-card farm-info-card">
+                        <div class="farm-management-header">
+                            <div>
+                                <h4>Farm Information</h4>
+                                <p>Zone equipment and tree details.</p>
+                            </div>
                         </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Field ID</th>
-                                        <th>Devices</th>
-                                        <th>Status</th>
-                                        <th>Last Update</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fieldStatusTableBody">
-                                    <!-- Loading state -->
-                                    <tr id="fieldStatusLoading">
-                                        <td colspan="4" style="text-align: center; padding: 2rem;">
-                                            <div class="loading-state">
-                                                <div class="loading-spinner"></div>
-                                                <p>Loading field status...</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="farm-info-grid" id="farmInfoSummary"></div>
+                        <div class="tree-age-display">
+                            <span id="treeAgeText">Tree Age: Not set.</span>
+                            <button type="button" id="treeAgeEditBtn">Edit</button>
+                        </div>
+                        <div class="tree-age-control hidden" id="treeAgeEditor">
+                            <label>
+                                Tree age
+                                <input type="number" id="treeAgeInput" min="0" max="100" step="1" placeholder="Add age">
+                            </label>
+                            <button class="btn-primary" type="button" id="treeAgeSaveBtn">Save</button>
                         </div>
                     </div>
                 </div>
+                </section>
             </div>
         </main>
     </div>
 
     <!-- JavaScript -->
     <script src="js/zone-navigation.js"></script>
-    <!-- Valve Control Module -->
-    <script type="module" src="js/valve-control.js"></script>
-    
+    <script src="js/virtual-valves.js"></script>
     <script>
         // Mobile menu toggle
         document.querySelector('.menu-toggle').addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
         });
-        
-        // Back to Dashboard button - direct handler as backup
-        const backBtn = document.getElementById('backBtn');
-        if (backBtn) {
-            backBtn.addEventListener('click', function() {
-                window.location.href = 'index.html';
-            });
-        }
         
         // Debug Map page loading
         console.log('Map page loaded');

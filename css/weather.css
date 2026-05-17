@@ -94,6 +94,14 @@
 }
 
 /* Weather Cards */
+.weather-card {
+    min-width: 0;
+}
+
+.stats-grid:has(.weather-card) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .weather-card .stat-icon {
     background: linear-gradient(135deg, #4facfe, #00f2fe);
 }
@@ -119,13 +127,6 @@
     font-size: 0.95rem;
     font-weight: 600;
     color: #64748b;
-    text-align: right;
-}
-
-.weather-updated {
-    margin: -1rem 0 1.5rem;
-    font-size: 0.8rem;
-    color: #94a3b8;
     text-align: right;
 }
 
@@ -240,32 +241,48 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
+    .stats-grid:has(.weather-card) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .map-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .overlay-controls,
     .level-controls {
         justify-content: space-between;
     }
 }
 
+.tables-grid {
+    margin-bottom: 2.5rem !important;
+}
+
+.charts-grid {
+    margin-top: 0;
+}
+
 @media (max-width: 768px) {
+    .stats-grid:has(.weather-card) {
+        grid-template-columns: 1fr;
+    }
+
     .map-header {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .map-controls {
         gap: 0.75rem;
     }
-    
+
     .overlay-controls select,
     .level-controls select {
         min-width: 100px;
     }
-    
+
     .map-container {
         height: 400px;
     }
@@ -275,17 +292,17 @@
     .map-container {
         height: 300px;
     }
-    
+
     .map-controls {
         flex-direction: column;
     }
-    
+
     .overlay-controls,
     .level-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .overlay-controls select,
     .level-controls select {
         min-width: auto;
@@ -333,6 +350,7 @@
         opacity: 0.5;
         transform: scale(0.95);
     }
+
     100% {
         opacity: 1;
         transform: scale(1);

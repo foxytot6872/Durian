@@ -106,7 +106,6 @@ class WeatherDashboard {
             this.updateHourlyForecast();
             this.updateWeatherAlerts(currentWeather.alerts || []);
             this.updateMapPopup();
-            this.updateLastUpdated();
         } catch (error) {
             console.error('Failed to refresh weather data:', error);
             if (silent && this.currentWeather) return;
@@ -136,27 +135,25 @@ class WeatherDashboard {
         const dateElement = document.getElementById('weatherDate');
         if (!dateElement) return;
 
-        const timestamp = this.currentWeather?.dt
-            ? (this.currentWeather.dt + this.currentTimezoneOffset) * 1000
-            : Date.now();
+        const dateSource = this.forecastList?.[0]?.dt_txt || this.currentWeather?.dt_txt;
+        let date;
+
+        if (dateSource && /^\d{4}-\d{2}-\d{2}/.test(dateSource)) {
+            const [datePart] = dateSource.split(' ');
+            const [year, month, day] = datePart.split('-').map(Number);
+            date = new Date(year, month - 1, day);
+        } else if (this.currentWeather?.dt) {
+            const timestamp = (this.currentWeather.dt + this.currentTimezoneOffset) * 1000;
+            date = new Date(timestamp);
+        } else {
+            date = new Date();
+        }
+
         dateElement.textContent = new Intl.DateTimeFormat('en-US', {
             weekday: 'long',
             month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC'
-        }).format(new Date(timestamp));
-    }
-
-    updateLastUpdated() {
-        const updatedElement = document.getElementById('lastUpdated');
-        if (!updatedElement) return;
-
-        updatedElement.textContent = `Last updated: ${new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        }).format(new Date())}`;
+            day: 'numeric'
+        }).format(date);
     }
 
     initializeCharts() {
@@ -200,7 +197,7 @@ class WeatherDashboard {
         if (!this.temperatureChart || !this.forecastList.length) return;
 
         const entries = this.forecastList.slice(0, 8);
-        this.temperatureChart.data.labels = entries.map((entry) => this.formatForecastLabel(entry.dt_txt, true));
+        this.temperatureChart.data.labels = entries.map((entry) => this.formatTime(entry.dt_txt));
         this.temperatureChart.data.datasets[0].data = entries.map((entry) => entry.main.temp);
         this.temperatureChart.update();
     }
@@ -241,7 +238,7 @@ class WeatherDashboard {
         if (!this.windChart || !this.forecastList.length) return;
 
         const entries = this.forecastList.slice(0, 8);
-        this.windChart.data.labels = entries.map((entry) => this.formatForecastLabel(entry.dt_txt, true));
+        this.windChart.data.labels = entries.map((entry) => this.formatTime(entry.dt_txt));
         this.windChart.data.datasets[0].data = entries.map((entry) => parseFloat((entry.wind.speed * 3.6).toFixed(1)));
         this.windChart.update();
     }
@@ -507,7 +504,13 @@ class WeatherDashboard {
             entries = this.forecastList.filter((_, index) => index % 8 === 0).slice(0, 14);
         }
 
-        this.temperatureChart.data.labels = entries.map((entry) => this.formatForecastLabel(entry.dt_txt, period !== 'Next 24 hours'));
+        this.temperatureChart.data.labels = entries.map((entry) => {
+            if (period === 'Next 24 hours') {
+                return this.formatTime(entry.dt_txt);
+            }
+
+            return entry.dt_txt ? entry.dt_txt.split(' ')[0].substring(5) : '';
+        });
         this.temperatureChart.data.datasets[0].data = entries.map((entry) => entry.main.temp);
         this.temperatureChart.update();
     }
@@ -516,26 +519,6 @@ class WeatherDashboard {
         if (!dtTxt) return '';
         const parts = dtTxt.split(' ');
         return parts[1] ? parts[1].substring(0, 5) : dtTxt;
-    }
-
-    formatForecastLabel(dtTxt, includeDate = false) {
-        if (!dtTxt) return '';
-
-        const [datePart, timePart] = dtTxt.split(' ');
-        const time = timePart ? timePart.substring(0, 5) : '';
-
-        if (!includeDate) {
-            return time;
-        }
-
-        const [year, month, day] = datePart.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
-        const dateLabel = new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric'
-        }).format(date);
-
-        return `${dateLabel} ${time}`.trim();
     }
 
     degreesToCompass(deg) {

@@ -424,6 +424,161 @@ body {
     color: #dc2626;
 }
 
+.stat-change.warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.zone-selector-header {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.refresh-graph-btn {
+    align-items: center;
+    background: #f1f5f9;
+    border: 1px solid #dbe5ef;
+    border-radius: 0.5rem;
+    color: #334155;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 0.875rem;
+    font-weight: 700;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 0.55rem 0.85rem;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.refresh-graph-btn:hover {
+    background: #e8f5ea;
+    border-color: #9bd3a1;
+    color: #166534;
+}
+
+.refresh-graph-btn:disabled {
+    cursor: wait;
+    opacity: 0.75;
+}
+
+.refresh-graph-btn.is-refreshing i {
+    animation: spin 1s linear infinite;
+}
+
+.farm-trend-overview {
+    background: white;
+    border-left: 6px solid #10b981;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.farm-trend-overview.risky {
+    border-left-color: #f59e0b;
+}
+
+.farm-trend-overview.danger,
+.farm-trend-overview.extreme {
+    border-left-color: #ef4444;
+}
+
+.trend-eyebrow {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+}
+
+.farm-trend-overview h2 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin: 0 0 0.25rem 0;
+}
+
+.farm-trend-overview p {
+    margin: 0;
+}
+
+.farm-score {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 112px;
+    padding: 0.75rem;
+}
+
+.farm-score span {
+    color: #1e293b;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.farm-score small {
+    color: #64748b;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    text-align: center;
+}
+
+.trend-list {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    margin-top: 1rem;
+}
+
+.trend-pill {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 42px;
+    padding: 0.5rem 0.75rem;
+}
+
+.trend-pill span {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
+.trend-pill strong {
+    color: #166534;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+}
+
+.trend-pill.risky strong {
+    color: #92400e;
+}
+
+.trend-pill.danger strong,
+.trend-pill.extreme strong {
+    color: #dc2626;
+}
+
+.trend-pill.no-data strong {
+    color: #94a3b8;
+}
+
 /* Charts Grid */
 .charts-grid {
     display: grid;
@@ -459,6 +614,14 @@ body {
     background-color: white;
     font-size: 0.875rem;
     color: #64748b;
+}
+
+.chart-controls {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
 }
 
 .chart-container {
@@ -668,6 +831,16 @@ body {
     
     .stat-card {
         padding: 1rem;
+    }
+
+    .farm-trend-overview {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .farm-score {
+        align-items: flex-start;
+        width: 100%;
     }
     
     .chart-card,

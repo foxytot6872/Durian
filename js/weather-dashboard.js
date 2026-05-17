@@ -139,7 +139,7 @@ class WeatherDashboard {
                             color: 'rgba(0, 0, 0, 0.05)'
                         },
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return value + '°C';
                             }
                         }
@@ -206,7 +206,7 @@ class WeatherDashboard {
                             color: 'rgba(0, 0, 0, 0.05)'
                         },
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return value + ' km/h';
                             }
                         }
@@ -340,6 +340,35 @@ class WeatherDashboard {
         if (refreshAlerts) {
             refreshAlerts.addEventListener('click', () => {
                 this.refreshWeatherAlerts();
+            });
+        }
+
+        // Hour navigation controls (Today / Prev / Next)
+        const prevBtn = document.getElementById('forecastPrevDay');
+        const todayBtn = document.getElementById('forecastToday');
+        const nextBtn = document.getElementById('forecastNextDay');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (this.hourlyDayOffset > 0) this.hourlyDayOffset--;
+                this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
+                this.updateForecastDayControls();
+            });
+        }
+
+        if (todayBtn) {
+            todayBtn.addEventListener('click', () => {
+                this.hourlyDayOffset = 0;
+                this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
+                this.updateForecastDayControls();
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                if (this.uniqueDays && this.hourlyDayOffset < this.uniqueDays.length - 1) this.hourlyDayOffset++;
+                this.populateHourlyForecast(this.forecastList, this.hourlyDayOffset);
+                this.updateForecastDayControls();
             });
         }
     }
