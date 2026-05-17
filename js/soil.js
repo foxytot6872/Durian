@@ -4,6 +4,7 @@ class SoilDashboard {
         this.selectedZone = null;
         this.firebaseDashboard = null;
         this.zones = [];
+        this.defaultZones = ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
         this.soilChart = null;
         this.trendMode = 'day';
         this.trendZone = 'overall';
@@ -91,20 +92,19 @@ class SoilDashboard {
         if (!this.firebaseDashboard) return;
 
         const allDevices = this.firebaseDashboard.getDevices();
+        const baseZones = Array.isArray(window.VirtualSensorData?.zones)
+            ? window.VirtualSensorData.zones
+            : this.defaultZones;
 
         // Group devices by zone
-        const zonesMap = new Map();
+        const zonesSet = new Set(baseZones.map(zone => this.normalizeZone(zone)));
         for (const device of allDevices) {
-            const zone = device.zone;
+            const zone = this.normalizeZone(device.zone);
             if (!zone) continue;
-
-            if (!zonesMap.has(zone)) {
-                zonesMap.set(zone, []);
-            }
-            zonesMap.get(zone).push(device);
+            zonesSet.add(zone);
         }
 
-        this.zones = Array.from(zonesMap.keys()).sort((a, b) => {
+        this.zones = Array.from(zonesSet).sort((a, b) => {
             const zoneA = a.replace('Zone ', '').trim();
             const zoneB = b.replace('Zone ', '').trim();
             return zoneA.localeCompare(zoneB);
@@ -115,8 +115,37 @@ class SoilDashboard {
 
         // Select first zone if none selected
         if (!this.selectedZone && this.zones.length > 0) {
-            this.selectZone(this.zones[0]);
+            const storedZone = this.normalizeZone(localStorage.getItem('selectedZone'));
+            this.selectZone(this.zones.includes(storedZone) ? storedZone : this.zones[0]);
         }
+    }
+
+    normalizeZone(zone) {
+        if (!zone) return null;
+        const text = String(zone).trim();
+        if (!text) return null;
+        if (/^Zone\s+/i.test(text)) {
+            const suffix = text.replace(/^Zone\s+/i, '').trim().toUpperCase();
+            return `Zone ${suffix}`;
+        }
+        return `Zone ${text.toUpperCase()}`;
+    }
+
+    getZoneSensorData(zone) {
+        const devices = this.firebaseDashboard.getDevicesByZone(zone);
+        const deviceSensorData = devices.find(device => device.sensorData)?.sensorData;
+        if (deviceSensorData) {
+            return { sensorData: deviceSensorData, source: 'device' };
+        }
+
+        if (typeof this.firebaseDashboard.getVirtualReadingForZone === 'function') {
+            const virtualData = this.firebaseDashboard.getVirtualReadingForZone(zone);
+            if (virtualData) {
+                return { sensorData: virtualData, source: 'virtual' };
+            }
+        }
+
+        return { sensorData: null, source: 'none' };
     }
 
     renderZoneButtons() {
@@ -194,18 +223,21 @@ class SoilDashboard {
             return;
         }
 
-        const devices = this.firebaseDashboard.getDevicesByZone(this.selectedZone);
-        if (devices.length === 0) {
-            statusEl.innerHTML = `📡 No devices found for ${this.selectedZone}`;
+        const zoneData = this.getZoneSensorData(this.selectedZone);
+        if (!zoneData.sensorData) {
+            statusEl.innerHTML = `📡 No data available for ${this.selectedZone}`;
             statusEl.style.background = '#f0f0f0';
             statusEl.style.color = '#666';
             return;
         }
 
-        const device = devices[0];
-        if (device.sensorData && device.sensorData.timestamp) {
-            const timestamp = this.formatTimestamp(device.sensorData.timestamp);
-            statusEl.innerHTML = `Live data from ${this.selectedZone} - Last update: ${timestamp}`;
+        if (zoneData.sensorData.timestamp) {
+            const timestamp = this.formatTimestamp(zoneData.sensorData.timestamp);
+            if (zoneData.source === 'virtual') {
+                statusEl.innerHTML = `Simulated data for ${this.selectedZone} - Last update: ${timestamp}`;
+            } else {
+                statusEl.innerHTML = `Live data from ${this.selectedZone} - Last update: ${timestamp}`;
+            }
             statusEl.style.background = '#d4edda';
             statusEl.style.color = '#155724';
         } else {
@@ -218,15 +250,8 @@ class SoilDashboard {
     updateSoilDisplay() {
         if (!this.firebaseDashboard || !this.selectedZone) return;
 
-        const devices = this.firebaseDashboard.getDevicesByZone(this.selectedZone);
-        if (devices.length === 0) {
-            this.clearDisplay();
-            return;
-        }
-
-        // Use first device's sensor data (or aggregate if multiple)
-        const device = devices[0];
-        const sensorData = device.sensorData;
+        const zoneData = this.getZoneSensorData(this.selectedZone);
+        const sensorData = zoneData.sensorData;
 
         if (!sensorData) {
             this.clearDisplay();
