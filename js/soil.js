@@ -6,6 +6,8 @@ class SoilDashboard {
         this.zones = [];
         this.soilChart = null;
         this.trendMode = 'day';
+        this.trendZone = 'overall';
+        this.trendMetric = 'overview';
         this.init();
     }
 
@@ -46,10 +48,27 @@ class SoilDashboard {
     }
 
     setupTrendControls() {
+        const zoneSelect = document.getElementById('soilTrendZone');
+        if (zoneSelect) {
+            zoneSelect.addEventListener('change', (event) => {
+                this.trendZone = event.target.value || 'overall';
+                this.renderTrendZoneSelect();
+                this.updateTrendDisplay();
+            });
+        }
+
         const select = document.getElementById('soilTrendMode');
         if (select) {
             select.addEventListener('change', (event) => {
                 this.trendMode = event.target.value;
+                this.updateTrendDisplay();
+            });
+        }
+
+        const metricSelect = document.getElementById('soilTrendMetric');
+        if (metricSelect) {
+            metricSelect.addEventListener('change', (event) => {
+                this.trendMetric = event.target.value;
                 this.updateTrendDisplay();
             });
         }
@@ -92,6 +111,7 @@ class SoilDashboard {
         });
 
         this.renderZoneButtons();
+        this.renderTrendZoneSelect();
 
         // Select first zone if none selected
         if (!this.selectedZone && this.zones.length > 0) {
@@ -133,9 +153,31 @@ class SoilDashboard {
         });
     }
 
+    renderTrendZoneSelect() {
+        const select = document.getElementById('soilTrendZone');
+        if (!select) return;
+
+        if (this.zones.length === 0) {
+            select.innerHTML = '<option value="">No zones</option>';
+            select.disabled = true;
+            return;
+        }
+
+        select.disabled = false;
+        const options = [
+            `<option value="overall"${this.trendZone === 'overall' ? ' selected' : ''}>Overall</option>`,
+            ...this.zones.map(zone => {
+                const selected = this.trendZone === zone ? ' selected' : '';
+                return `<option value="${zone}"${selected}>${zone}</option>`;
+            })
+        ];
+        select.innerHTML = options.join('');
+    }
+
     selectZone(zone) {
         this.selectedZone = zone;
         this.renderZoneButtons();
+        this.renderTrendZoneSelect();
         this.updateSoilDisplay();
         this.updateZoneStatus();
         this.updateTrendDisplay();
@@ -262,7 +304,8 @@ class SoilDashboard {
         const store = window.VirtualSensorData;
         if (!store || !this.selectedZone) return;
 
-        const zone = this.selectedZone;
+        const zone = this.trendZone === 'overall' ? null : this.trendZone;
+        const titleZone = zone || 'Overall';
         let records = [];
         let labels = [];
         let title = '';
@@ -281,6 +324,7 @@ class SoilDashboard {
             title = 'Year';
         } else {
             records = store.getHourlyTrend(0, zone);
+            if (!zone) records = this.summarizeOverallHourly(records);
             labels = records.map(record => {
                 const date = new Date(record.timestamp);
                 return `${String(date.getHours()).padStart(2, '0')}:00`;
@@ -288,17 +332,95 @@ class SoilDashboard {
             title = 'Day';
         }
 
-        this.renderTrendChart(labels, records, title);
+        this.renderTrendChart(labels, records, `${titleZone} - ${title}`);
         this.renderTrendList(records);
+    }
+
+    summarizeOverallHourly(records) {
+        const grouped = new Map();
+        records.forEach(record => {
+            if (!grouped.has(record.timestamp)) grouped.set(record.timestamp, []);
+            grouped.get(record.timestamp).push(record);
+        });
+
+        return Array.from(grouped.entries())
+            .sort((a, b) => a[0] - b[0])
+            .map(([timestamp, group]) => this.summarizeTrendRecords(Number(timestamp), group));
+    }
+
+    summarizeTrendRecords(timestamp, records) {
+        const average = (key, digits = 1) => {
+            const values = records.map(record => Number(record[key])).filter(Number.isFinite);
+            if (!values.length) return null;
+            const factor = 10 ** digits;
+            return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * factor) / factor;
+        };
+        const score = average('score', 0);
+
+        return {
+            timestamp,
+            moisture: average('moisture', 0),
+            temperature: average('temperature', 1),
+            ph: average('ph', 1),
+            ec: average('ec', 0),
+            n: average('n', 0),
+            p: average('p', 0),
+            k: average('k', 0),
+            score,
+            status: this.statusFromScore(score)
+        };
+    }
+
+    statusFromScore(score) {
+        if (score === null || score === undefined) return 'no-data';
+        if (score >= 78) return 'healthy';
+        if (score >= 55) return 'risky';
+        if (score >= 32) return 'danger';
+        return 'extreme';
     }
 
     renderTrendChart(labels, records, title) {
         const canvas = document.getElementById('soilChart');
         if (!canvas || typeof Chart === 'undefined') return;
 
-        const chartData = {
-            labels,
-            datasets: [
+        const chartData = this.buildTrendChartData(labels, records);
+        const scales = this.buildTrendScales();
+
+        if (!this.soilChart) {
+            this.soilChart = new Chart(canvas, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: title
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales
+                }
+            });
+            return;
+        }
+
+        this.soilChart.data = chartData;
+        this.soilChart.options.plugins.title.text = title;
+        this.soilChart.options.scales = scales;
+        this.soilChart.update();
+    }
+
+    buildTrendChartData(labels, records) {
+        const datasetsByMetric = {
+            overview: [
                 {
                     label: 'Health Score',
                     data: records.map(record => record.score),
@@ -324,52 +446,132 @@ class SoilDashboard {
                     tension: 0.35,
                     yAxisID: 'temp'
                 }
+            ],
+            moisture: [
+                {
+                    label: 'Moisture %',
+                    data: records.map(record => record.moisture),
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.14)',
+                    fill: true,
+                    tension: 0.35,
+                    yAxisID: 'percent'
+                }
+            ],
+            ph: [
+                {
+                    label: 'pH',
+                    data: records.map(record => record.ph),
+                    borderColor: '#9333ea',
+                    backgroundColor: 'rgba(147, 51, 234, 0.12)',
+                    fill: true,
+                    tension: 0.35,
+                    yAxisID: 'ph'
+                }
+            ],
+            ec: [
+                {
+                    label: 'EC µS/cm',
+                    data: records.map(record => record.ec),
+                    borderColor: '#0891b2',
+                    backgroundColor: 'rgba(8, 145, 178, 0.12)',
+                    fill: true,
+                    tension: 0.35,
+                    yAxisID: 'ec'
+                }
+            ],
+            nutrients: [
+                {
+                    label: 'Nitrogen',
+                    data: records.map(record => record.n),
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                    tension: 0.35,
+                    yAxisID: 'nutrients'
+                },
+                {
+                    label: 'Phosphorus',
+                    data: records.map(record => record.p),
+                    borderColor: '#ca8a04',
+                    backgroundColor: 'rgba(202, 138, 4, 0.08)',
+                    tension: 0.35,
+                    yAxisID: 'nutrients'
+                },
+                {
+                    label: 'Potassium',
+                    data: records.map(record => record.k),
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                    tension: 0.35,
+                    yAxisID: 'nutrients'
+                }
             ]
         };
 
-        if (!this.soilChart) {
-            this.soilChart = new Chart(canvas, {
-                type: 'line',
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: title
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    },
-                    scales: {
-                        score: {
-                            type: 'linear',
-                            position: 'left',
-                            min: 0,
-                            max: 100
-                        },
-                        temp: {
-                            type: 'linear',
-                            position: 'right',
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    }
+        return {
+            labels,
+            datasets: datasetsByMetric[this.trendMetric] || datasetsByMetric.overview
+        };
+    }
+
+    buildTrendScales() {
+        if (this.trendMetric === 'moisture') {
+            return {
+                percent: {
+                    type: 'linear',
+                    position: 'left',
+                    min: 0,
+                    max: 100
                 }
-            });
-            return;
+            };
         }
 
-        this.soilChart.data = chartData;
-        this.soilChart.options.plugins.title.text = title;
-        this.soilChart.update();
+        if (this.trendMetric === 'ph') {
+            return {
+                ph: {
+                    type: 'linear',
+                    position: 'left',
+                    min: 4,
+                    max: 9
+                }
+            };
+        }
+
+        if (this.trendMetric === 'ec') {
+            return {
+                ec: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true
+                }
+            };
+        }
+
+        if (this.trendMetric === 'nutrients') {
+            return {
+                nutrients: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true
+                }
+            };
+        }
+
+        return {
+            score: {
+                type: 'linear',
+                position: 'left',
+                min: 0,
+                max: 100
+            },
+            temp: {
+                type: 'linear',
+                position: 'right',
+                grid: {
+                    drawOnChartArea: false
+                }
+            }
+        };
     }
 
     renderTrendList(records) {

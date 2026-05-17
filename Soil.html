@@ -192,6 +192,16 @@
                     <div class="chart-header">
                         <h3>Soil Health Trends</h3>
                         <div class="chart-controls">
+                            <select id="soilTrendZone" aria-label="Select soil trend zone">
+                                <option value="">Loading zones...</option>
+                            </select>
+                            <select id="soilTrendMetric" aria-label="Select soil trend metric">
+                                <option value="overview">Overview</option>
+                                <option value="moisture">Moisture</option>
+                                <option value="ph">pH</option>
+                                <option value="ec">EC</option>
+                                <option value="nutrients">NPK</option>
+                            </select>
                             <select id="soilTrendMode">
                                 <option value="day">Day</option>
                                 <option value="week">Week</option>
@@ -200,7 +210,6 @@
                             </select>
                             <button class="refresh-graph-btn" type="button" data-refresh-graph>
                                 <i class="fas fa-rotate-right"></i>
-                                <span>Refresh graph</span>
                             </button>
                         </div>
                     </div>

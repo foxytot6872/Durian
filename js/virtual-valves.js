@@ -22,6 +22,7 @@
             this.manualWaterTimers = {};
             this.manualWaterRemaining = {};
             this.manualWaterCompletedAt = {};
+            this.scheduleCheckTimer = null;
             this.init();
         }
 
@@ -34,6 +35,7 @@
             this.bindListActions();
             this.setDefaultTimes();
             this.render();
+            this.startScheduleRunner();
             this.openInitialView();
             this.waitForFirebase();
         }
@@ -285,6 +287,69 @@
             this.saveSchedules();
             this.render();
             this.syncScheduleToFirebase(schedule);
+        }
+
+        startScheduleRunner() {
+            this.processDueSchedules();
+            if (this.scheduleCheckTimer) clearInterval(this.scheduleCheckTimer);
+            this.scheduleCheckTimer = setInterval(() => this.processDueSchedules(), 30 * 1000);
+        }
+
+        processDueSchedules() {
+            const now = new Date();
+            const dueSchedules = this.schedules
+                .filter((schedule) => schedule.status === 'scheduled')
+                .filter((schedule) => {
+                    const scheduledAt = this.parseScheduleDate(schedule.datetime);
+                    return scheduledAt && scheduledAt <= now;
+                })
+                .sort((a, b) => this.parseScheduleDate(a.datetime) - this.parseScheduleDate(b.datetime));
+
+            if (!dueSchedules.length) return;
+
+            let changed = false;
+            dueSchedules.forEach((schedule) => {
+                if (this.getActiveManualTask(schedule.zone)) return;
+
+                const log = this.waterZone(
+                    schedule.zone,
+                    schedule.duration,
+                    'scheduled',
+                    schedule.waterAmountLiters,
+                    'watering'
+                );
+                if (log) this.startManualWaterCountdown(schedule.duration, log.id, schedule.zone);
+
+                if (schedule.repeatEveryDays) {
+                    schedule.lastRunAt = now.toISOString();
+                    schedule.datetime = this.getNextRepeatDateTime(schedule, now);
+                } else {
+                    schedule.status = 'completed';
+                    schedule.completedAt = now.toISOString();
+                }
+
+                changed = true;
+                this.syncScheduleToFirebase(schedule);
+            });
+
+            if (changed) {
+                this.saveSchedules();
+                this.render();
+            }
+        }
+
+        parseScheduleDate(value) {
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        getNextRepeatDateTime(schedule, fromDate = new Date()) {
+            const repeatEveryDays = Math.max(1, Number(schedule.repeatEveryDays || 1));
+            const next = this.parseScheduleDate(schedule.datetime) || new Date(fromDate);
+            do {
+                next.setDate(next.getDate() + repeatEveryDays);
+            } while (next <= fromDate);
+            return this.toInputDateTime(next);
         }
 
         removeSchedule(scheduleId) {

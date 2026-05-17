@@ -56,6 +56,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
     background-color: white;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 0.875rem;
     color: #64748b;
     min-width: 120px;
@@ -200,6 +201,7 @@
     border-radius: 0.5rem;
     color: #334155;
     cursor: pointer;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 0.86rem;
     font-weight: 600;
     min-height: 2.35rem;
@@ -212,6 +214,12 @@
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.14);
     outline: none;
+}
+
+.chart-controls select option,
+.overlay-controls select option,
+.level-controls select option {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Weather Charts */

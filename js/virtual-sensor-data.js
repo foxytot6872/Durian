@@ -526,9 +526,20 @@ class VirtualSensorDataStore {
             temperature: round(average('temperature'), 1),
             ph: round(average('ph'), 1),
             ec: round(average('ec')),
+            n: round(average('n')),
+            p: round(average('p')),
+            k: round(average('k')),
             score: round(avgScore),
-            status: worst.status
+            status: this.getStatusFromScore(avgScore),
+            worstStatus: worst.status
         };
+    }
+
+    getStatusFromScore(score) {
+        if (score >= 78) return 'healthy';
+        if (score >= 55) return 'risky';
+        if (score >= 32) return 'danger';
+        return 'extreme';
     }
 
     getFarmStatus(zone = null) {
