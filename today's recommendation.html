@@ -109,11 +109,11 @@
                             <div class="icon">
                                 <i class="fas fa-thermometer-half"></i>
                             </div>
-                            Temperature
+                            Soil Temperature
                         </h3>
                         <div class="recommendation-value">28°C</div>
                         <div class="recommendation-description">
-                             Monitor for any sudden changes that might affect fruit development.
+                             Monitor soil temperature changes that might affect root activity and fruit development.
                         </div>
                     </div>
 
@@ -323,7 +323,7 @@
           return;
         }
 
-        // Temperature (fa-thermometer-half)
+        // Soil Temperature (fa-thermometer-half)
         if (icon.classList.contains('fa-thermometer-half')) {
           const text = (sensor && sensor.temperature !== undefined && sensor.temperature !== null)
             ? `${Math.round(sensor.temperature)}°C`
@@ -333,19 +333,19 @@
           // update temperature description and actionable advice
           if (descEl) {
             if (!sensor || sensor.temperature === undefined || sensor.temperature === null) {
-              descEl.textContent = 'No temperature data available.';
+              descEl.textContent = 'No soil temperature data available.';
             } else {
               const t = Number(sensor.temperature);
               if (t < 15) {
-                descEl.textContent = 'Very cold. Protect young trees from frost and avoid irrigation during freezing conditions.';
+                descEl.textContent = 'Very cold soil. Protect young trees from frost and avoid irrigation during freezing conditions.';
               } else if (t < 20) {
-                descEl.textContent = 'Cool temperatures. Monitor for slowed growth and delay heavy fertilization.';
+                descEl.textContent = 'Cool soil temperature. Monitor for slowed root activity and delay heavy fertilization.';
               } else if (t <= 30) {
-                descEl.textContent = 'Temperature is optimal for durian growth. Maintain regular monitoring.';
+                descEl.textContent = 'Soil temperature is optimal for durian growth. Maintain regular monitoring.';
               } else if (t <= 35) {
-                descEl.textContent = 'Warm conditions. Increase irrigation frequency slightly and provide temporary shade if possible.';
+                descEl.textContent = 'Warm soil conditions. Increase irrigation frequency slightly and provide temporary shade if possible.';
               } else {
-                descEl.textContent = 'Heat stress risk. Provide shade, increase irrigation, and monitor trees closely for wilting.';
+                descEl.textContent = 'Soil heat stress risk. Provide shade, increase irrigation, and monitor trees closely for wilting.';
               }
             }
           }
@@ -502,7 +502,7 @@
           return;
         }
 
-        // Temperature (fa-thermometer-half)
+        // Soil Temperature (fa-thermometer-half)
         if (icon.classList.contains('fa-thermometer-half')) {
           const text = (sensor && sensor.temperature !== undefined && sensor.temperature !== null)
             ? `${Math.round(sensor.temperature)}°C`
@@ -512,19 +512,19 @@
           // update temperature description and actionable advice
           if (descEl) {
             if (!sensor || sensor.temperature === undefined || sensor.temperature === null) {
-              descEl.textContent = 'No temperature data available.';
+              descEl.textContent = 'No soil temperature data available.';
             } else {
               const t = Number(sensor.temperature);
               if (t < 15) {
-                descEl.textContent = 'Very cold. Protect young trees from frost and avoid irrigation during freezing conditions.';
+                descEl.textContent = 'Very cold soil. Protect young trees from frost and avoid irrigation during freezing conditions.';
               } else if (t < 20) {
-                descEl.textContent = 'Cool temperatures. Monitor for slowed growth and delay heavy fertilization.';
+                descEl.textContent = 'Cool soil temperature. Monitor for slowed root activity and delay heavy fertilization.';
               } else if (t <= 30) {
-                descEl.textContent = 'Temperature is optimal for durian growth. Maintain regular monitoring.';
+                descEl.textContent = 'Soil temperature is optimal for durian growth. Maintain regular monitoring.';
               } else if (t <= 35) {
-                descEl.textContent = 'Warm conditions. Increase irrigation frequency slightly and provide temporary shade if possible.';
+                descEl.textContent = 'Warm soil conditions. Increase irrigation frequency slightly and provide temporary shade if possible.';
               } else {
-                descEl.textContent = 'Heat stress risk. Provide shade, increase irrigation, and monitor trees closely for wilting.';
+                descEl.textContent = 'Soil heat stress risk. Provide shade, increase irrigation, and monitor trees closely for wilting.';
               }
             }
           }
@@ -810,6 +810,7 @@
       window._reminderHelpers = { loadReminders, loadArchive, addReminder, renderReminders };
     })();
     </script>
+    <script src="js/utils/constants.js"></script>
     <script src="js/recommendation-history.js"></script>
     <script src="js/recommendation-weather.js"></script>
 </body>

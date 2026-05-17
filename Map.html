@@ -199,7 +199,7 @@
                         <div class="farm-management-card">
                             <div class="farm-management-header">
                                 <div>
-                                    <h4>Upcoming Schedules</h4>
+                                    <h4> Schedules</h4>
                                     <p>All zone watering jobs.</p>
                                 </div>
                             </div>
@@ -287,28 +287,46 @@
 
                 <!-- Valve Control -->
                 <div class="farm-management-section">
-                    <div class="farm-management-card valve-control-card-simple">
-                        <div class="farm-management-header">
-                            <div>
-                                <h4>Valve Control</h4>
-                                <p>Water this zone manually for a set duration.</p>
+                    <div class="valve-log-row">
+                        <div class="farm-management-card valve-control-card-simple">
+                            <div class="farm-management-header">
+                                <div>
+                                    <h4>Valve Control</h4>
+                                    <p> </p>
+                                </div>
+                                <div class="valve-state-indicator" id="valveStateIndicator">
+                                    <span></span>
+                                    <strong>Valve closed</strong>
+                                </div>
+                            </div>
+                            <div class="manual-valve-controls">
+                                <label class="manual-duration-field">
+                                    <span>Duration</span>
+                                    <select id="manualWaterDuration">
+                                        <option value="15">15 minutes</option>
+                                        <option value="30" selected>30 minutes</option>
+                                        <option value="45">45 minutes</option>
+                                        <option value="60">1 hour</option>
+                                    </select>
+                                    <div class="manual-water-status hidden" id="manualWaterStatus">Water for 30 min</div>
+                                </label>
+                                <button class="btn-primary" type="button" id="manualWaterNowBtn">
+                                    Water Now
+                                </button>
+                            </div>
+                            <div class="manual-water-footer">
+                                <button class="manual-cancel-button hidden" type="button" id="manualWaterCancelBtn">Cancel Task</button>
                             </div>
                         </div>
-                        <div class="manual-valve-controls">
-                            <label>
-                                Duration
-                                <select id="manualWaterDuration">
-                                    <option value="15">15 minutes</option>
-                                    <option value="30" selected>30 minutes</option>
-                                    <option value="45">45 minutes</option>
-                                    <option value="60">1 hour</option>
-                                </select>
-                            </label>
-                            <button class="btn-primary" type="button" id="manualWaterNowBtn">
-                                <i class="fas fa-droplet"></i>
-                                Water Now
-                            </button>
-                            <div class="manual-water-status" id="manualWaterStatus">Water for 30 min</div>
+
+                        <div class="farm-management-card schedule-list-card">
+                            <div class="farm-management-header">
+                                <div>
+                                    <h4> Schedule</h4>
+                                    <p>Default watering jobs for this zone.</p>
+                                </div>
+                            </div>
+                            <div id="wateringScheduleList" class="farm-log-list"></div>
                         </div>
                     </div>
                 </div>
@@ -372,25 +390,17 @@
                             </form>
                         </div>
 
-                        <div class="farm-management-card">
-                            <div class="farm-management-header">
-                                <div>
-                                    <h4>Upcoming Schedule</h4>
-                                    <p>Next 7 watering jobs for this zone.</p>
-                                </div>
-                            </div>
-                            <div id="wateringScheduleList" class="farm-log-list"></div>
-                        </div>
-
-                        <div class="farm-management-card">
+                        <div class="farm-management-card log-list-card">
                             <div class="farm-management-header">
                                 <div>
                                     <h4>Watering Log</h4>
-                                    <p>Manual valve actions and scheduled watering history for this zone. Clear it anytime after testing.</p>
+                                    <p>Manual valve actions and scheduled watering history for this zone.</p>
                                 </div>
+                                <button class="log-clear-button hidden" type="button" id="clearZoneLogsBtn" data-log-action="clear" data-log-scope="zone">Clear Log</button>
                             </div>
                             <div id="wateringLogList" class="farm-log-list"></div>
                         </div>
+
                     </div>
                 </div>
 

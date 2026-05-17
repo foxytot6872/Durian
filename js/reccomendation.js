@@ -47,7 +47,7 @@ class RecommendationDashboard {
         // --- 1. Soil Moisture Recommendation ---
         this.applyMoistureRec(aggregatedData.moisture);
 
-        // --- 2. Temperature Recommendation ---
+        // --- 2. Soil Temperature Recommendation ---
         this.applyTemperatureRec(aggregatedData.temperature);
 
         // --- 3. pH Recommendation ---
@@ -127,7 +127,7 @@ class RecommendationDashboard {
         const valueEl = document.getElementById('temperature-value');
         const descEl = document.getElementById('temperature-recommendation');
         if (!valueEl || !descEl || temp === null) {
-            this.setMetricError(valueEl, descEl, '--°C', "No data for temperature.");
+            this.setMetricError(valueEl, descEl, '--°C', "No data for soil temperature.");
             return;
         }
 
@@ -138,13 +138,13 @@ class RecommendationDashboard {
 
         if (temp < 20) {
             card.classList.add('low');
-            descEl.textContent = "LOW: Temperatures are cool. Ensure young trees have mulch coverage to conserve heat and protect shallow roots.";
+            descEl.textContent = "LOW: Soil temperatures are cool. Ensure young trees have mulch coverage to conserve heat and protect shallow roots.";
         } else if (temp > 35) {
             card.classList.add('high');
-            descEl.textContent = "HIGH HEAT: Temperatures are stressing the canopy. Use overhead misting or schedule irrigation during the cooler part of the day (e.g., 4 PM).";
+            descEl.textContent = "HIGH HEAT: Soil temperature is stressing the root zone. Use mulch or schedule irrigation during the cooler part of the day (e.g., 4 PM).";
         } else {
             card.classList.add('optimal');
-            descEl.textContent = "IDEAL: Temperature is perfect for photosynthesis and fruit maturity. Maintain current routine.";
+            descEl.textContent = "IDEAL: Soil temperature is in a healthy range for root activity. Maintain current routine.";
         }
     }
 

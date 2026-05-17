@@ -70,11 +70,33 @@ class FarmDashboard {
 
     getLocalWateringLogs() {
         try {
-            return JSON.parse(localStorage.getItem(this.wateringLogsKey) || '[]');
+            const logs = JSON.parse(localStorage.getItem(this.wateringLogsKey) || '[]');
+            return this.completeExpiredWateringLogs(logs);
         } catch (error) {
             console.warn('Could not read watering logs', error);
             return [];
         }
+    }
+
+    completeExpiredWateringLogs(logs) {
+        let changed = false;
+        const normalized = logs.map(log => {
+            if (log?.status === 'watering' && log.endsAt && new Date(log.endsAt).getTime() <= Date.now()) {
+                changed = true;
+                return {
+                    ...log,
+                    status: 'completed',
+                    completedAt: log.endsAt
+                };
+            }
+            return log;
+        });
+
+        if (changed) {
+            localStorage.setItem(this.wateringLogsKey, JSON.stringify(normalized.slice(0, 80)));
+        }
+
+        return normalized;
     }
 
     renderWateringActivities(logs) {
@@ -100,8 +122,17 @@ class FarmDashboard {
         tbody.innerHTML = sortedLogs.map(log => {
             const duration = Number(log.duration || 0);
             const waterAmount = log.waterAmountLiters ? `, ${log.waterAmountLiters} L` : '';
-            const status = log.status === 'watering' ? 'Watering' : 'Completed';
-            const statusClass = log.status === 'watering' ? 'in-progress' : 'completed';
+            const isWatering = log.status === 'watering' && (!log.endsAt || new Date(log.endsAt).getTime() > Date.now());
+            const status = log.status === 'cancelled'
+                ? 'Cancelled'
+                : log.status === 'paused'
+                    ? 'Paused'
+                    : isWatering
+                        ? 'Watering'
+                        : 'Completed';
+            const statusClass = ['cancelled', 'paused'].includes(log.status)
+                ? log.status
+                : isWatering ? 'in-progress' : 'completed';
             return `
                 <tr>
                     <td>Watering</td>
@@ -127,7 +158,9 @@ class FarmDashboard {
             const dbUrl = 'https://testing-151e6-default-rtdb.asia-southeast1.firebasedatabase.app';
             const response = await fetch(`${dbUrl}/users/${dashboard.currentUser.uid}/watering_logs.json?auth=${dashboard.idToken}`);
             const firebaseLogs = await response.json();
-            const merged = this.mergeLogsById(this.getLocalWateringLogs(), Object.values(firebaseLogs || {}));
+            const merged = this.completeExpiredWateringLogs(
+                this.mergeLogsById(this.getLocalWateringLogs(), Object.values(firebaseLogs || {}))
+            );
             localStorage.setItem(this.wateringLogsKey, JSON.stringify(merged.slice(0, 80)));
             this.renderWateringActivities(merged);
         } catch (error) {

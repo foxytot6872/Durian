@@ -4,9 +4,12 @@ class WeatherDashboard {
         this.weatherMap = null;
         this.temperatureChart = null;
         this.windChart = null;
-        this.currentLocation = { lat: 13.7563, lon: 100.5018 }; // Bangkok, Thailand
-        this.apiKey = 'c77f6cae2743fcd686c29b44e574e221';
-        this.apiEndpoint = 'https://api.openweathermap.org/data/2.5/forecast';
+        const weatherConfig = window.CONFIG?.WEATHER_API || {};
+        const endpoints = weatherConfig.ENDPOINTS || {};
+        this.currentLocation = { ...(weatherConfig.DEFAULT_LOCATION || { lat: 13.7563, lon: 100.5018 }) };
+        this.apiKey = weatherConfig.API_KEY || 'c77f6cae2743fcd686c29b44e574e221';
+        this.apiEndpoint = endpoints.FORECAST || 'https://api.openweathermap.org/data/2.5/forecast';
+        this.units = weatherConfig.UNITS || 'metric';
         this.forecastList = []; // Cached forecast entries from API
 
         this.init();
@@ -30,7 +33,7 @@ class WeatherDashboard {
     async fetchAndRender() {
         this.showLoadingState();
         try {
-            const url = `${this.apiEndpoint}?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}&appid=${this.apiKey}&units=metric`;
+            const url = `${this.apiEndpoint}?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}&appid=${this.apiKey}&units=${this.units}`;
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`API error: ${response.status} ${response.statusText}`);

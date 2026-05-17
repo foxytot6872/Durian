@@ -1,8 +1,10 @@
 (function() {
-    const API_KEY = 'c77f6cae2743fcd686c29b44e574e221';
-    const CURRENT_ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
-    const FORECAST_ENDPOINT = 'https://api.openweathermap.org/data/2.5/forecast';
-    const FALLBACK_LOCATION = { lat: 13.7563, lon: 100.5018 };
+    const weatherConfig = window.CONFIG?.WEATHER_API || {};
+    const API_KEY = weatherConfig.API_KEY || 'c77f6cae2743fcd686c29b44e574e221';
+    const CURRENT_ENDPOINT = weatherConfig.ENDPOINTS?.CURRENT || 'https://api.openweathermap.org/data/2.5/weather';
+    const FORECAST_ENDPOINT = weatherConfig.ENDPOINTS?.FORECAST || 'https://api.openweathermap.org/data/2.5/forecast';
+    const FALLBACK_LOCATION = weatherConfig.DEFAULT_LOCATION || { lat: 13.7563, lon: 100.5018 };
+    const UNITS = weatherConfig.UNITS || 'metric';
 
     function setText(id, value) {
         const element = document.getElementById(id);
@@ -37,7 +39,7 @@
     }
 
     async function fetchWeather(endpoint, location) {
-        const url = `${endpoint}?lat=${location.lat}&lon=${location.lon}&appid=${API_KEY}&units=metric`;
+        const url = `${endpoint}?lat=${location.lat}&lon=${location.lon}&appid=${API_KEY}&units=${UNITS}`;
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`OpenWeather error: ${response.status} ${response.statusText}`);
@@ -48,22 +50,49 @@
     function getRainChance(currentWeather, forecast) {
         const forecastPop = forecast?.list?.[0]?.pop;
         if (Number.isFinite(forecastPop)) {
-            return `${Math.round(forecastPop * 100)}%`;
+            return Math.round(forecastPop * 100);
         }
 
         const currentRain = currentWeather?.rain?.['1h'] || currentWeather?.rain?.['3h'];
         if (currentRain) {
-            return `${currentRain.toFixed(1)} mm`;
+            return Math.round(Math.min(100, currentRain * 12));
         }
 
-        return '0%';
+        return 0;
     }
 
-    function renderWeather(currentWeather, forecast) {
+    function publishWeatherData(currentWeather, forecast, location) {
+        const rainChance = getRainChance(currentWeather, forecast);
+        const condition = currentWeather.weather?.[0]?.main || 'Unknown';
+        const description = currentWeather.weather?.[0]?.description || 'current weather';
+
+        window.DurianWeatherData = {
+            current: currentWeather,
+            forecast,
+            location,
+            updatedAt: new Date().toISOString(),
+            summary: {
+                temperature: currentWeather.main.temp,
+                humidity: currentWeather.main.humidity,
+                windKmh: currentWeather.wind.speed * 3.6,
+                rainChance,
+                condition,
+                description
+            }
+        };
+
+        window.dispatchEvent(new CustomEvent('durian-weather-updated', {
+            detail: window.DurianWeatherData
+        }));
+    }
+
+    function renderWeather(currentWeather, forecast, location) {
+        const rainChance = getRainChance(currentWeather, forecast);
         setText('recommendationWeatherTemp', `${Math.round(currentWeather.main.temp)}°C`);
         setText('recommendationWeatherHumidity', `${currentWeather.main.humidity}%`);
         setText('recommendationWeatherWind', `${Math.round(currentWeather.wind.speed * 3.6)} km/h`);
-        setText('recommendationWeatherRain', getRainChance(currentWeather, forecast));
+        setText('recommendationWeatherRain', `${rainChance}%`);
+        publishWeatherData(currentWeather, forecast, location);
 
         const updated = new Intl.DateTimeFormat('en-US', {
             hour: 'numeric',
@@ -81,7 +110,7 @@
                 fetchWeather(CURRENT_ENDPOINT, location),
                 fetchWeather(FORECAST_ENDPOINT, location)
             ]);
-            renderWeather(currentWeather, forecast);
+            renderWeather(currentWeather, forecast, location);
         } catch (error) {
             console.error('Failed to load recommendation weather:', error);
             setText('recommendationWeatherTemp', 'Error');

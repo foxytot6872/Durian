@@ -81,6 +81,7 @@
         const store = window.VirtualSensorData;
         const zones = store.zones || ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
         const recommendations = [];
+        const apiWeather = window.DurianWeatherData?.summary || null;
 
         zones.forEach(zone => {
             const records = getZoneHistory(zone);
@@ -166,8 +167,8 @@
             if (avgTemp !== null && avgTemp > 34) {
                 recommendations.push(buildRecommendation({
                     id: `${zone}_heat`,
-                    title: `Prepare heat protection in ${zone}`,
-                    reason: `${zone} temperature average is ${avgTemp.toFixed(1)}C over recent readings.`,
+                    title: `Prepare soil heat protection in ${zone}`,
+                    reason: `${zone} soil temperature average is ${avgTemp.toFixed(1)}C over recent readings.`,
                     action: 'Add mulch, water during cooler hours, and inspect young trees for wilting.',
                     priority: 'medium',
                     timeframe: 'today',
@@ -175,6 +176,56 @@
                 }));
             }
         });
+
+        if (apiWeather) {
+            if (apiWeather.rainChance >= 65) {
+                recommendations.push(buildRecommendation({
+                    id: 'api_weather_rain_irrigation',
+                    title: 'Review irrigation before rain',
+                    reason: `OpenWeather shows a ${Math.round(apiWeather.rainChance)}% rain chance near the farm.`,
+                    action: 'Check today\'s watering schedule and reduce or skip irrigation if soil moisture is already healthy.',
+                    priority: apiWeather.rainChance >= 85 ? 'high' : 'medium',
+                    timeframe: 'today',
+                    icon: 'cloud-rain'
+                }));
+            }
+
+            if (apiWeather.temperature >= 34) {
+                recommendations.push(buildRecommendation({
+                    id: 'api_weather_heat_protection',
+                    title: 'Prepare heat protection',
+                    reason: `OpenWeather current temperature is ${Math.round(apiWeather.temperature)}C.`,
+                    action: 'Water during cooler hours, refresh mulch, and inspect young trees for heat stress.',
+                    priority: apiWeather.temperature >= 37 ? 'high' : 'medium',
+                    timeframe: 'today',
+                    icon: 'temperature-high'
+                }));
+            }
+
+            if (apiWeather.windKmh >= 28) {
+                recommendations.push(buildRecommendation({
+                    id: 'api_weather_wind_check',
+                    title: 'Check wind protection',
+                    reason: `OpenWeather wind speed is about ${Math.round(apiWeather.windKmh)} km/h.`,
+                    action: 'Secure young trees, supports, and loose irrigation lines before stronger gusts arrive.',
+                    priority: apiWeather.windKmh >= 40 ? 'high' : 'medium',
+                    timeframe: 'today',
+                    icon: 'wind'
+                }));
+            }
+
+            if (apiWeather.humidity >= 88) {
+                recommendations.push(buildRecommendation({
+                    id: 'api_weather_humidity_monitor',
+                    title: 'Monitor disease risk',
+                    reason: `OpenWeather humidity is ${Math.round(apiWeather.humidity)}%, which can raise fungal pressure.`,
+                    action: 'Improve airflow around dense areas and avoid wetting leaves during evening irrigation.',
+                    priority: 'medium',
+                    timeframe: 'tomorrow',
+                    icon: 'droplet'
+                }));
+            }
+        }
 
         return recommendations
             .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority))
@@ -255,5 +306,6 @@
         }
 
         window.addEventListener('virtual-sensors:test-scenario-change', renderRecommendations);
+        window.addEventListener('durian-weather-updated', renderRecommendations);
     });
 })();

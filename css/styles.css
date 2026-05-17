@@ -616,6 +616,53 @@ body {
     color: #64748b;
 }
 
+#soilTrendMode,
+#soilTrendZone,
+#soilTrendMetric {
+    appearance: none;
+    background-color: #f8fafc;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position:
+        calc(100% - 16px) 50%,
+        calc(100% - 11px) 50%;
+    background-repeat: no-repeat;
+    background-size: 5px 5px, 5px 5px;
+    border: 1px solid #dbe5ef;
+    color: #334155;
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 40px;
+    min-width: 8.5rem;
+    padding: 0.55rem 2rem 0.55rem 0.85rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+#soilTrendMode:hover,
+#soilTrendZone:hover,
+#soilTrendMetric:hover {
+    background-color: #ffffff;
+    border-color: #9bd3a1;
+    color: #166534;
+}
+
+#soilTrendMode:focus,
+#soilTrendZone:focus,
+#soilTrendMetric:focus {
+    border-color: #4ba252;
+    box-shadow: 0 0 0 3px rgba(75, 162, 82, 0.14);
+    outline: none;
+}
+
+#soilTrendZone {
+    min-width: 9.5rem;
+}
+
+#soilTrendMetric {
+    min-width: 8.75rem;
+}
+
 .chart-controls {
     align-items: center;
     display: flex;
